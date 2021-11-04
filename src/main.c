@@ -62,7 +62,6 @@ extern volatile unsigned char f_channel_4_int;
 //-- Timers globals ----------------------------------
 volatile unsigned short timer_standby = 0;
 volatile unsigned short wait_ms_var = 0;
-volatile unsigned short need_to_save_timer = 0;
 
 //-- for the filters and outputs
 volatile unsigned char channels_values_int [2] = { 0 };
@@ -90,9 +89,12 @@ int main(void)
     // TF_Led();    //simple led functionality
     // TF_Control_Fan ();
     // TF_TIM16_Pwm_CH1N ();
-    TF_TIM14_Pwm_CH1 ();
-    // TF_Temp_Channel ();    
-    // End Hard Tests -------------------------------
+    // TF_TIM14_Pwm_CH1 ();
+    // TF_TIM3_CH1_ConstantOff_TIM3_CH2_TriggerInput ();
+    // TF_TIM1_CH1_ConstantOff_TIM1_CH2_TriggerInput ();
+    // TF_Adc_With_DMA_TIM16_Pwm_CH1N ();
+    TF_Two_Complete_Channels_Hardware ();
+    // End Hardware Tests -------------------------------
 
     // Hardware Inits. ---------------------------
 //     // Timer for PWM

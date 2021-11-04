@@ -52,7 +52,7 @@ void MA16_U16Circular_Reset (ma16_u16_data_obj_t * p_data)
 //Filtro circular, necesito activar previamente con MA16_U16Circular_Reset()
 //recibe:
 // puntero a estructura de datos del filtro "ma16_u16_data_obj_t *"
-// nueva mustra "new_sample"
+// nueva muestra "new_sample"
 //contesta:
 // resultado del filtro
 unsigned short MA16_U16Circular (ma16_u16_data_obj_t *p_data, unsigned short new_sample)

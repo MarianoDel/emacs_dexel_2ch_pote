@@ -1,6 +1,6 @@
 # 2Ch Control Board
 micro STM32F030K6T6
-LCD and tact switches
+Two Pote inputs
 
 Before start check uc selection and the configuration
 -----------------------------------------------------

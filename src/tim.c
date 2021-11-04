@@ -184,8 +184,8 @@ void TIM_1_Init_pwm_CH1_trig_CH2 (void)
     if (!RCC_TIM1_CLK)
         RCC_TIM1_CLK_ON;
 
-    //Configuracion del timer.
-    TIM1->CR1 = 0x00;        //clk int / 1;
+    // timer configuration
+    TIM1->CR1 = 0x00 | TIM_CR1_ARPE;        //clk int / 1, auto preload enable
     TIM1->CR2 |= TIM_CR2_MMS_1;        //UEV -> TRG0
     
     //Reset mode, trigger with TI2
@@ -226,8 +226,8 @@ void TIM_3_Init_pwm_CH1_trig_CH2 (void)
     if (!RCC_TIM3_CLK)
         RCC_TIM3_CLK_ON;
 
-    //Configuracion del timer.
-    TIM3->CR1 = 0x00;        //clk int / 1;
+    // timer configuration
+    TIM3->CR1 = 0x00 | TIM_CR1_ARPE;        //clk int / 1, auto preload enable
     TIM3->CR2 |= TIM_CR2_MMS_1;        //UEV -> TRG0
     
     //Reset mode, trigger with TI2
@@ -314,7 +314,7 @@ void TIM_14_Init (void)
     unsigned int temp;
     temp = GPIOA->AFR[0];
     temp &= 0x0FFFFFFF;
-    temp |= 0x50000000;    //PA7 -> AF5
+    temp |= 0x40000000;    //PA7 -> AF4
     GPIOA->AFR[0] = temp;
 
     TIM14->CR1 |= TIM_CR1_CEN;
