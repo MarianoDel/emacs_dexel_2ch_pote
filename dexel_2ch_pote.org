@@ -1,0 +1,137 @@
+* Dexel 2ch 8A controller board
+** Migrar Hard & Soft
+*** TODO del modulo hard    
+    - mejorar un poco las rutinas de chequeo de switches
+      para que sean mas eficientes en tiempo y acepten los nuevos 3 pines
+      
+*** DONE del modulo gpio
+    CLOSED: [2021-04-03 Sat 09:30]
+
+*** TODO desde el main
+    - dejar las funciones de menues del o3
+    - agregar un manejo parecido al rgb6ch
+
+*** DONE modulo dmx_receiver
+    CLOSED: [2021-04-05 Mon 08:25]
+    - es un nuevo modulo que necesita pruebas
+
+*** TODO modulo flash_program
+
+*** TODO modos manual y DMX con modulos separados
+
+*** DONE modulo usart parecido al rgb6ch
+    CLOSED: [2021-04-05 Mon 08:25]
+
+*** TODO modulo tim parecido rgb6ch
+
+** Armar rutinas en test_functions
+*** DONE armar las rutinas de prueba
+    CLOSED: [2021-04-05 Mon 08:27]
+    - rutinas de pruebas de los nuevos pines IO
+    - mover los perifericos
+    - armar deteccion de tramas dmx
+
+** Simulacion de menues en lcd
+*** DONE Menues de configuracion
+    CLOSED: [2021-04-03 Sat 09:34]
+
+*** TODO Menues de uso DMX y Manual
+
+* Modificaciones de Programa
+** Dos modos de operacion
+*** CCT o 1ch en Dmx
+    - CCT con pantalla
+      CCT:  2700K     Dmx
+      Dim: 100.0%     001
+
+    - 1ch con pantalla
+      Dim: 100.0%     Dmx
+                      001
+
+*** CCT o 1ch en Manual
+    - CCT con pantalla
+      CCT:  2700K     Man
+      Dim: 100.0%
+
+    - 1ch con pantalla
+      Dim: 100.0%     Man
+
+*** Cambio DMX a Manual automatico
+    - el cambio es automatico, si detecta consola va a dmx
+    - si no tiene consola va a manual y guarda los valores del dmx
+
+*** Cambio de address DMX
+    - Se habilita el cambio directo de address en el modo DMX
+    - subir o bajar cambia el address directamente, se guarda despues de un tiempo
+
+** Configuracion
+*** CCT o 1ch
+    - el modo no lo puede elegir el usuario
+    - para CCT poner dos modos 
+      CCT1 2700 a 6500K
+      CCT2 3200 a 5700K
+
+*** Temperatura de FAN
+*** Temperatura actual
+*** Maxima corriente por canal
+
+* Cambios de modulos
+## antes de cambiar filters offsets
+arm-none-eabi-size Template_F030_rom.elf
+   text	   data	    bss	    dec	    hex	filename
+  21136	    104	   1304	  22544	   5810	Template_F030_rom.elf
+
+
+## cambio a filters_and_offsets con filter length 32
+arm-none-eabi-size Template_F030_rom.elf
+   text	   data	    bss	    dec	    hex	filename
+  21132	    104	   1300	  22536	   5808	Template_F030_rom.elf
+
+
+## cambio a filters_and_offsets sin filter length 32
+arm-none-eabi-size Template_F030_rom.elf
+   text	   data	    bss	    dec	    hex	filename
+  21032	    104	   1444	  22580	   5834	Template_F030_rom.elf
+
+## cambio completo sin filter length 32 funcion original
+arm-none-eabi-size Template_F030_rom.elf
+   text	   data	    bss	    dec	    hex	filename
+  21156	    104	   1444	  22704	   58b0	Template_F030_rom.elf
+
+## cambio completo funcion post filter
+arm-none-eabi-size Template_F030_rom.elf
+   text	   data	    bss	    dec	    hex	filename
+  21036	    104	   1440	  22580	   5834	Template_F030_rom.elf
+
+
+* Validation Tests
+** DONE Probar modelo actual - como cambia colores -
+   CLOSED: [2021-09-20 Tue 15:47]
+   - pwm freq 1KHz 16000 pts
+   - ena freq 1KHz 1000 pts
+
+** DONE Seguir con modelo actual pero con modulo filters_and_offsets nuevo
+   CLOSED: [2021-09-20 Mon 09:09]
+   - freq y pts mismas caracteristicas anteriores 
+
+** DONE Con modelo actual cambiar frecuencias de trabajo
+   CLOSED: [2021-09-20 Tue 15:47]
+   - pwm freq 4KHz 4096 pts
+   - ena freq 1KHz 1000 pts
+
+
+** DONE Con el nuevo modulo probar post filter - como cambia colores -
+   CLOSED: [2021-09-20 Tue 15:47]
+   - pwm freq 4KHz 4096 pts
+   - ena freq 4KHz 4096 pts
+
+*** Este modulo permite dmx bajos trabajarlos con ena
+    - probar bajos valores de dmx (hasta 4), ver ena 
+
+** DONE Acelerar switches en manual
+   CLOSED: [2021-09-20 Tue 15:47]
+
+** DONE Medir frequencia de trabajo con input capture en F_CHNLS
+   CLOSED: [2021-09-21 Tue 15:47]
+
+* TODO Blanquear contadores de errores con ena
