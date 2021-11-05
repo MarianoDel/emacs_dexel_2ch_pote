@@ -153,5 +153,165 @@ void PWM_Map_Post_Filter (unsigned short dmx_filtered, unsigned short * pwm_ena,
 }
 
 
+#define DEFAULT_SOFT_PWM    4095
+volatile unsigned char edges = 0;
+volatile unsigned short soft_pwm_ch1 = 0;
+volatile unsigned short soft_pwm_ch2 = 0;
+volatile unsigned short soft_saved_pwm_ch1 = 0;
+volatile unsigned short soft_saved_pwm_ch2 = 0;
+volatile unsigned short soft_pwm_cnt = 0;
+volatile unsigned short soft_pwm_next = 0;
+
+volatile unsigned char soft_pwm_output_ch1 = 0;
+volatile unsigned char soft_pwm_output_ch2 = 0;
+
+void PWM_Soft_Handler (void)
+{
+    switch (edges)
+    {
+    case 0:
+        // starting edge
+        soft_pwm_next = 0;
+        
+        if (soft_saved_pwm_ch1)
+        {
+            soft_pwm_output_ch1 = 1;
+            soft_pwm_next = soft_saved_pwm_ch1;
+            
+            edges++;
+        }
+
+        if (soft_saved_pwm_ch2)
+        {
+            soft_pwm_output_ch2 = 1;
+            if (soft_pwm_next > soft_saved_pwm_ch2)
+                soft_pwm_next = soft_saved_pwm_ch2;
+            
+            edges++;
+        }
+
+        if (!edges)    //default timer
+        {
+            soft_pwm_next = DEFAULT_SOFT_PWM;
+        }
+        break;
+
+    case 1:    // one edge
+        // first falling edge
+        if (soft_pwm_ch1 <= soft_pwm_cnt)
+        {
+            soft_pwm_output_ch1 = 0;
+        }
+
+        if (soft_pwm_ch2 <= soft_pwm_cnt)
+        {
+            soft_pwm_output_ch2 = 0;
+        }
+
+        if (soft_pwm_ch1 > soft_pwm_ch2)
+        {
+            soft_pwm_next = DEFAULT_SOFT_PWM - soft_pwm_ch1;
+        }
+        else
+        {
+            soft_pwm_next = DEFAULT_SOFT_PWM - soft_pwm_ch2;
+        }
+
+        edges--;
+        break;
+
+    case 2:    // two edges
+        // second falling edge
+        if (soft_pwm_ch1 <= soft_pwm_cnt)
+        {
+            soft_pwm_output_ch1 = 0;
+        }
+
+        if (soft_pwm_ch2 <= soft_pwm_cnt)
+        {
+            soft_pwm_output_ch2 = 0;
+        }
+
+        if (soft_pwm_ch1 > soft_pwm_ch2)
+            soft_pwm_next = soft_pwm_ch1 - soft_pwm_ch2;
+        else
+            soft_pwm_next = soft_pwm_ch2 -soft_pwm_ch1;
+
+        edges--;
+        break;
+
+    default:
+        edges = 0;
+        break;
+    }    
+}
+
+
+void PWM_Soft_Handler_Low_Freq (void)
+{
+    if (soft_pwm_cnt < 255)
+    {
+        soft_pwm_cnt++;
+
+        if (soft_saved_pwm_ch1 <= soft_pwm_cnt)
+            PWM_Soft_Reset_Output_Ch1 ();
+
+        if (soft_saved_pwm_ch2 <= soft_pwm_cnt)
+            PWM_Soft_Reset_Output_Ch2 ();
+
+    }
+    else
+    {
+        soft_pwm_cnt = 0;
+        
+        if (soft_saved_pwm_ch1)
+            PWM_Soft_Set_Output_Ch1 ();
+
+        if (soft_saved_pwm_ch2)
+            PWM_Soft_Set_Output_Ch2 ();
+
+    }
+}
+
+
+void PWM_Soft_Reset_Output_Ch1 (void)
+{
+    // soft_pwm_output_ch1 = 0;
+    // TIM1->ARR = 0;
+    LED_OFF;
+}
+
+
+void PWM_Soft_Reset_Output_Ch2 (void)
+{
+    // soft_pwm_output_ch2 = 0;
+    TIM3->ARR = 0;
+}
+
+
+void PWM_Soft_Set_Output_Ch1 (void)
+{
+    // soft_pwm_output_ch1 = 1;
+    // TIM1->ARR = VALUE_FOR_LEAST_FREQ;
+    LED_ON;    
+}
+
+
+void PWM_Soft_Set_Output_Ch2 (void)
+{
+    // soft_pwm_output_ch2 = 1;
+    TIM3->ARR = VALUE_FOR_LEAST_FREQ;
+}
+
+
+
+void PWM_Soft_Set_Channels (unsigned char ch, unsigned short value)
+{
+    if (ch == 1)
+        soft_saved_pwm_ch1 = value;
+
+    if (ch == 2)
+        soft_saved_pwm_ch2 = value;
+}
 
 //--- end of file ---//

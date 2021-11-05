@@ -10,6 +10,7 @@
 // Includes --------------------------------------------------------------------
 #include "tim.h"
 #include "hard.h"
+#include "pwm.h"
 
 
 // Module Private Types Constants and Macros -----------------------------------
@@ -114,72 +115,10 @@ void Wait_ms (unsigned short wait)
 }
 
 
-#define VALUE_FOR_LEAST_FREQ    1200    //40KHz
+
+
 #define VALUE_FOR_CONSTANT_OFF    173    //3.6us tick 20.83ns
-
-void TIM_1_Init (void)
-{
-    unsigned long temp;
-
-    if (!RCC_TIM1_CLK)
-        RCC_TIM1_CLK_ON;
-
-#ifdef USE_F_CHNLS_FOR_FREQ_DETECT
-    //Configuracion del timer.
-    TIM1->CR1 = 0x00;		//clk int / 1; upcounting
-    // TIM1->CR2 |= TIM_CR2_MMS_1;		//UEV -> TRG0
-
-    TIM1->SMCR = 0x0000;
-    // TIM1->CCMR1 = 0x2100;    //CH2 input filtered N=4 map IC2->TI2
-    // TIM1->CCMR2 = 0x2100;    //CH4 input filtered N=4 map IC4->TI4
-    TIM1->CCMR1 = 0x2d00;    //CH2 input filtered N=4 map IC2->TI2, pres / 8
-    TIM1->CCMR2 = 0x2d00;    //CH4 input filtered N=4 map IC4->TI4, pres / 8
-    
-    TIM1->CCER |= TIM_CCER_CC4E | TIM_CCER_CC2E;    //CH4 & CH2 capture enable rising edge    
-    TIM1->ARR = 0xFFFF;
-    TIM1->CNT = 0;
-
-    TIM1->PSC = 47;
-#ifdef USE_OVERCURRENT_PROT
-    // Enable timer interrupt see UDIS
-    TIM1->DIER |= TIM_DIER_CC4IE | TIM_DIER_CC2IE;    // int on CC4 CC2 & overflow    
-    // NVIC_EnableIRQ(TIM1_BRK_UP_TRG_COM_IRQn);
-    // NVIC_SetPriority(TIM1_BRK_UP_TRG_COM_IRQn, 1);
-    NVIC_EnableIRQ(TIM1_CC_IRQn);
-    NVIC_SetPriority(TIM1_CC_IRQn, 8);
-#endif    
-#endif
-
-#ifdef USE_F_CHNLS_FOR_ENABLE
-    //Configuracion del timer.
-    TIM1->CR1 = 0x00;		//clk int / 1; upcounting
-    // TIM1->CR2 |= TIM_CR2_MMS_1;		//UEV -> TRG0
-
-    TIM1->SMCR = 0x0000;
-    TIM1->CCMR1 = 0x6000;    //CH2 output PWM mode 1 (channel active TIM1->CNT < TIM1->CCR1)
-    TIM1->CCMR2 = 0x6000;    //CH4 output PWM mode 1 (channel active TIM1->CNT < TIM1->CCR1)
-    
-    TIM1->CCER |= TIM_CCER_CC4E | TIM_CCER_CC2E;    //CH4 & CH2 enable on pin direct polarity
-
-    TIM1->BDTR |= TIM_BDTR_MOE;
-    
-    TIM1->ARR = 4095;
-    TIM1->CNT = 0;
-
-    TIM1->PSC = 2;
-#endif
-    
-    //Alternate Fuction Pin Configurations
-    temp = GPIOA->AFR[1];
-    temp &= 0xFFFF0F0F;    
-    temp |= 0x00002020;    //PA11 -> AF2; PA9 -> AF2
-    GPIOA->AFR[1] = temp;
-    
-    TIM1->CR1 |= TIM_CR1_CEN;
-}
-
-
-void TIM_1_Init_pwm_CH1_trig_CH2 (void)
+void TIM_1_Init_pwm_neg_CH1_trig_CH2 (void)
 {
     if (!RCC_TIM1_CLK)
         RCC_TIM1_CLK_ON;
@@ -199,7 +138,7 @@ void TIM_1_Init_pwm_CH1_trig_CH2 (void)
     // TIM1->CCMR1 = 0x0070;
     
     TIM1->CCMR2 = 0x0000;
-    TIM1->CCER |= TIM_CCER_CC1E;    // CH1 enable
+    TIM1->CCER |= TIM_CCER_CC1E | TIM_CCER_CC1P;    // CH1 enable, polarity reversal
     
     TIM1->ARR = VALUE_FOR_LEAST_FREQ;    //cada tick 20.83ns
 
@@ -221,7 +160,7 @@ void TIM_1_Init_pwm_CH1_trig_CH2 (void)
 }
 
 
-void TIM_3_Init_pwm_CH1_trig_CH2 (void)
+void TIM_3_Init_pwm_neg_CH1_trig_CH2 (void)
 {
     if (!RCC_TIM3_CLK)
         RCC_TIM3_CLK_ON;
@@ -241,7 +180,7 @@ void TIM_3_Init_pwm_CH1_trig_CH2 (void)
     // TIM3->CCMR1 = 0x0070;
     
     TIM3->CCMR2 = 0x0000;
-    TIM3->CCER |= TIM_CCER_CC1E;    // CH1 enable
+    TIM3->CCER |= TIM_CCER_CC1E | TIM_CCER_CC1P;    // CH1 enable, polarity reversal
     
     TIM3->ARR = VALUE_FOR_LEAST_FREQ;    //cada tick 20.83ns
 
@@ -261,31 +200,11 @@ void TIM_3_Init_pwm_CH1_trig_CH2 (void)
 }
 
 
-void TIM3_IRQHandler (void)	//1 ms
+void TIM3_IRQHandler (void)
 {
-	/*
-	Usart_Time_1ms ();
-
-	if (timer_1seg)
-	{
-		if (timer_1000)
-			timer_1000--;
-		else
-		{
-			timer_1seg--;
-			timer_1000 = 1000;
-		}
-	}
-
-	if (timer_led_comm)
-		timer_led_comm--;
-
-	if (timer_standby)
-		timer_standby--;
-	*/
-	//bajar flag
-	if (TIM3->SR & 0x01)	//bajo el flag
-		TIM3->SR = 0x00;
+    //bajar flag
+    if (TIM3->SR & 0x01)	//bajo el flag
+        TIM3->SR = 0x00;
 }
 
 
@@ -354,6 +273,52 @@ void TIM_16_Init (void)
 
     TIM16->CR1 |= TIM_CR1_CEN;
 
+}
+
+
+void TIM_17_Init (void)
+{
+    if (!RCC_TIM17_CLK)
+        RCC_TIM17_CLK_ON;
+
+    //Configuracion del timer.
+    TIM17->ARR = 25;
+    TIM17->CNT = 0;
+    TIM17->PSC = 47;
+
+    // Enable timer interrupt ver UDIS
+    TIM17->DIER |= TIM_DIER_UIE;
+    TIM17->CR1 |= TIM_CR1_URS;	//solo int cuando hay overflow y one shot
+
+    NVIC_EnableIRQ(TIM17_IRQn);
+    NVIC_SetPriority(TIM17_IRQn, 8);
+}
+
+
+void TIM17_IRQHandler (void)
+{
+    if (TIM17->SR & 0x01)
+    {
+        TIM17->SR = 0x00;    //flag down
+        // if (LED)
+        //     LED_OFF;
+        // else
+        //     LED_ON;
+
+        PWM_Soft_Handler_Low_Freq ();
+    }    
+}
+
+
+void TIM17Enable (void)
+{
+    TIM17->CR1 |= TIM_CR1_CEN;
+}
+
+
+void TIM17Disable (void)
+{
+    TIM17->CR1 &= ~TIM_CR1_CEN;
 }
 
 //--- end of file ---//

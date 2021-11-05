@@ -16,6 +16,8 @@
 #define DUTY_MAX    (DUTY_100_PERCENT)
 #define DUTY_ALWAYS    (DUTY_100_PERCENT + 1)
 
+#define VALUE_FOR_LEAST_FREQ    1200    //40KHz
+
 #ifdef USE_PWM_16000_FREQ_1KHZ
 #define DUTY_00_PERCENT		0
 #define DUTY_10_PERCENT		1600
@@ -71,27 +73,27 @@
 #define DisablePreload_TIM1_CH2    (TIM1->CCMR1 &= ~TIM_CCMR1_OC2PE)
 #define DisablePreload_TIM1_CH4    (TIM1->CCMR1 &= ~TIM_CCMR2_OC4PE)
 
-#define CTRL_CH1(X)    Update_TIM3_CH1(X)
-#define CTRL_CH2(X)    Update_TIM3_CH2(X)
-#define CTRL_CH3(X)    Update_TIM3_CH3(X)
-#define CTRL_CH4(X)    Update_TIM3_CH4(X)
-#define CTRL_CH5(X)    Update_TIM1_CH1(X)
-#define CTRL_CH6(X)    Update_TIM1_CH4(X)
 
 
 // Module Exported Functions -----------------------------------------
-// void TIM_1_Init(void);
-// void TIM_3_Init(void);
-void TIM_1_Init_pwm_CH1_trig_CH2 (void);
-void TIM_3_Init_pwm_CH1_trig_CH2 (void);
+void TIM_1_Init_pwm_neg_CH1_trig_CH2 (void);
+
+void TIM_3_Init_pwm_neg_CH1_trig_CH2 (void);
 void TIM3_IRQHandler (void);
+
 void TIM_6_Init (void);
-void TIM14_IRQHandler (void);
+
 void TIM_14_Init(void);
-void TIM16_IRQHandler (void);
+void TIM14_IRQHandler (void);
+
 void TIM_16_Init(void);
-void TIM17_IRQHandler (void);
+void TIM16_IRQHandler (void);
+
 void TIM_17_Init(void);
+void TIM17_IRQHandler (void);
+void TIM17Enable (void);
+void TIM17Disable (void);
+
 void Update_TIM1_CH1 (unsigned short);
 void Update_TIM1_CH2 (unsigned short);
 void Update_TIM1_CH4 (unsigned short);

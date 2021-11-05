@@ -1,5 +1,4 @@
 //------------------------------------------------
-// #### PROJECT: O3 TREATMENT - Custom Board #####
 // ## Internal Test Functions Module
 // ##
 // ## @Author: Med
@@ -13,7 +12,6 @@
 #ifndef _TEST_FUNTIONS_H_
 #define _TEST_FUNTIONS_H_
 
-#include "hard.h"
 
 // Exported Types Constants and Macros -----------------------------------------
 
@@ -29,6 +27,10 @@ void TF_TIM1_CH1_ConstantOff_TIM1_CH2_TriggerInput (void);
 
 void TF_Adc_With_DMA_TIM16_Pwm_CH1N (void);
 void TF_Two_Complete_Channels_Hardware (void);
+void TF_Two_Complete_Channels_Hardware_With_Offset (void);
+
+void TF_TIM17_Interrupt (void);
+void TF_TIM17_Interrupt_Soft_Pwm (void);
 
 #endif    /* _TEST_FUNTIONS_H_ */
 

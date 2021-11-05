@@ -14,7 +14,7 @@
 #include "hard.h"
 #include "tim.h"
 // #include "gpio.h"
-// #include "pwm.h"
+#include "pwm.h"
 #include "adc.h"
 #include "dma.h"
 #include "temperatures.h"
@@ -89,7 +89,7 @@ void TF_TIM3_CH1_ConstantOff_TIM3_CH2_TriggerInput (void)
 {
     TIM_16_Init ();
     Update_TIM16_CH1N (4095);
-    TIM_3_Init_pwm_CH1_trig_CH2 ();
+    TIM_3_Init_pwm_neg_CH1_trig_CH2 ();
 
     while (1)
     {
@@ -102,7 +102,7 @@ void TF_TIM1_CH1_ConstantOff_TIM1_CH2_TriggerInput (void)
 {
     TIM_14_Init ();
     Update_TIM14_CH1 (4095);
-    TIM_1_Init_pwm_CH1_trig_CH2 ();
+    TIM_1_Init_pwm_neg_CH1_trig_CH2 ();
 
     while (1)
     {
@@ -142,11 +142,11 @@ void TF_Two_Complete_Channels_Hardware (void)
 
     // Start of Complete Pote Channel 1
     TIM_14_Init ();
-    TIM_1_Init_pwm_CH1_trig_CH2 ();
+    TIM_1_Init_pwm_neg_CH1_trig_CH2 ();
     
     // Start of Complete Pote Channel 2
     TIM_16_Init ();
-    TIM_3_Init_pwm_CH1_trig_CH2 ();    
+    TIM_3_Init_pwm_neg_CH1_trig_CH2 ();    
     
     while (1)
     {
@@ -155,6 +155,66 @@ void TF_Two_Complete_Channels_Hardware (void)
         Update_TIM14_CH1 (Pote_Channel_1);
         Update_TIM16_CH1N (Pote_Channel_2);        
     }
+    
+}
+
+
+void TF_Two_Complete_Channels_Hardware_With_Offset (void)
+{
+    // Init ADC and DMA
+    AdcConfig();
+    DMAConfig();
+    DMA1_Channel1->CCR |= DMA_CCR_EN;
+    ADC1->CR |= ADC_CR_ADSTART;
+
+    // Start of Complete Pote Channel 1
+    TIM_14_Init ();
+    TIM_1_Init_pwm_neg_CH1_trig_CH2 ();
+    
+    // Start of Complete Pote Channel 2
+    TIM_16_Init ();
+    TIM_3_Init_pwm_neg_CH1_trig_CH2 ();    
+    
+    while (1)
+    {
+        Wait_ms(5);
+
+        Update_TIM14_CH1 (Pote_Channel_1 + 125);
+        Update_TIM16_CH1N (Pote_Channel_2 + 125);        
+    }
+    
+}
+
+
+void TF_TIM17_Interrupt (void)
+{
+    TIM_17_Init ();
+
+    TIM17Enable();
+    while (1);
+    
+}
+
+
+void TF_TIM17_Interrupt_Soft_Pwm (void)
+{
+    TIM_17_Init ();
+
+    // Start of Complete Pote Channel 1    
+    TIM_14_Init ();
+    Update_TIM14_CH1 (125);    
+    TIM_1_Init_pwm_neg_CH1_trig_CH2 ();
+
+    // Start of Complete Pote Channel 2
+    TIM_16_Init ();
+    Update_TIM16_CH1N (125);
+    TIM_3_Init_pwm_neg_CH1_trig_CH2 ();    
+    
+    PWM_Soft_Set_Channels (1, 127);
+    PWM_Soft_Set_Channels (2, 0);
+    
+    TIM17Enable();
+    while (1);
     
 }
 

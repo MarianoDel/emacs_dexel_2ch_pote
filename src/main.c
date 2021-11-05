@@ -93,7 +93,10 @@ int main(void)
     // TF_TIM3_CH1_ConstantOff_TIM3_CH2_TriggerInput ();
     // TF_TIM1_CH1_ConstantOff_TIM1_CH2_TriggerInput ();
     // TF_Adc_With_DMA_TIM16_Pwm_CH1N ();
-    TF_Two_Complete_Channels_Hardware ();
+    // TF_Two_Complete_Channels_Hardware ();
+    // TF_Two_Complete_Channels_Hardware_With_Offset ();
+    // TF_TIM17_Interrupt ();
+    TF_TIM17_Interrupt_Soft_Pwm ();
     // End Hardware Tests -------------------------------
 
     // Hardware Inits. ---------------------------

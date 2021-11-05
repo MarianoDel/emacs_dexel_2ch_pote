@@ -210,14 +210,15 @@ tests:
 	./a.out
 
 
-tests_dmx:
+tests_pwm:
 	# first compile common modules (modules to test and dependencies)
-	gcc -c src/dmx_receiver.c -I. $(INCDIR) -DSTM32F030
+	gcc -c --coverage src/pwm.c -I. $(INCDIR) -DSTM32F030
 	# second auxiliary helper modules
 	gcc -c src/tests_ok.c -I $(INCDIR)
-	gcc src/tests_dmx.c dmx_receiver.o tests_ok.o
+	gcc --coverage src/tests_pwm.c pwm.o tests_ok.o
 	./a.out
-
+	# process coverage
+	gcov pwm.c -m
 
 
 tests_pwm_simul:
