@@ -154,6 +154,7 @@ void PWM_Map_Post_Filter (unsigned short dmx_filtered, unsigned short * pwm_ena,
 
 
 #define DEFAULT_SOFT_PWM    4095
+#define SOFT_PWM_STEPS    256
 volatile unsigned char edges = 0;
 volatile unsigned short soft_pwm_ch1 = 0;
 volatile unsigned short soft_pwm_ch2 = 0;
@@ -249,60 +250,63 @@ void PWM_Soft_Handler (void)
 
 void PWM_Soft_Handler_Low_Freq (void)
 {
-    if (soft_pwm_cnt < 255)
+    if (soft_pwm_cnt)
     {
-        soft_pwm_cnt++;
-
-        if (soft_saved_pwm_ch1 <= soft_pwm_cnt)
+        if (soft_saved_pwm_ch1 <= soft_pwm_cnt)        
             PWM_Soft_Reset_Output_Ch1 ();
 
         if (soft_saved_pwm_ch2 <= soft_pwm_cnt)
             PWM_Soft_Reset_Output_Ch2 ();
-
+        
+        if (soft_pwm_cnt < (SOFT_PWM_STEPS - 1))
+            soft_pwm_cnt++;
+        else
+            soft_pwm_cnt = 0;
+        
     }
     else
     {
-        soft_pwm_cnt = 0;
-        
         if (soft_saved_pwm_ch1)
             PWM_Soft_Set_Output_Ch1 ();
 
         if (soft_saved_pwm_ch2)
             PWM_Soft_Set_Output_Ch2 ();
 
+        soft_pwm_cnt++;
     }
-}
-
-
-void PWM_Soft_Reset_Output_Ch1 (void)
-{
-    // soft_pwm_output_ch1 = 0;
-    // TIM1->ARR = 0;
-    LED_OFF;
-}
-
-
-void PWM_Soft_Reset_Output_Ch2 (void)
-{
-    // soft_pwm_output_ch2 = 0;
-    TIM3->ARR = 0;
 }
 
 
 void PWM_Soft_Set_Output_Ch1 (void)
 {
-    // soft_pwm_output_ch1 = 1;
+    soft_pwm_output_ch1 = 1;
     // TIM1->ARR = VALUE_FOR_LEAST_FREQ;
-    LED_ON;    
+    // TIM1->EGR |= TIM_EGR_UG;    
+    // LED_ON;    
+}
+
+
+void PWM_Soft_Reset_Output_Ch1 (void)
+{
+    soft_pwm_output_ch1 = 0;
+    // TIM1->ARR = 0;
+    // LED_OFF;
 }
 
 
 void PWM_Soft_Set_Output_Ch2 (void)
 {
-    // soft_pwm_output_ch2 = 1;
-    TIM3->ARR = VALUE_FOR_LEAST_FREQ;
+    soft_pwm_output_ch2 = 1;
+    // TIM3->ARR = VALUE_FOR_LEAST_FREQ;
+    // TIM3->EGR |= TIM_EGR_UG;
 }
 
+
+void PWM_Soft_Reset_Output_Ch2 (void)
+{
+    soft_pwm_output_ch2 = 0;
+    // TIM3->ARR = 0;
+}
 
 
 void PWM_Soft_Set_Channels (unsigned char ch, unsigned short value)

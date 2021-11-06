@@ -39,7 +39,7 @@ extern volatile unsigned char edges;
 void Test_Pwm_Set (void);
 void Test_Pwm_Handler (void);
 void Test_Pwm_Handler_Low_Freq (void);
-    
+void Test_Pwm_Handler_Low_Freq_soft (void);    
 
 // Module Functions ------------------------------------------------------------
 
@@ -47,9 +47,10 @@ void Test_Pwm_Handler_Low_Freq (void);
 int main(int argc, char *argv[])
 {
 
-    Test_Pwm_Set ();
+    // Test_Pwm_Set ();
     // Test_Pwm_Handler ();
-    Test_Pwm_Handler_Low_Freq ();
+    // Test_Pwm_Handler_Low_Freq ();
+    Test_Pwm_Handler_Low_Freq_soft ();
 }
 
 
@@ -172,6 +173,28 @@ void Test_Pwm_Handler_Low_Freq (void)
     }
     else
         PrintOK();
+    
+}
+
+
+#define SOFT_PWM_STEPS    256
+void Test_Pwm_Handler_Low_Freq_soft (void)
+{
+    PWM_Soft_Set_Channels (1, 1);
+    for (int i = 0; i < (SOFT_PWM_STEPS * 3); i++)
+    {
+        PWM_Soft_Handler_Low_Freq();
+        printf("loop: %03d set: %d cnt: %d output: %d\n",
+               i,
+               soft_saved_pwm_ch1,
+               soft_pwm_cnt,
+               soft_pwm_output_ch1);
+    }        
+    // {
+    //     PrintOK();
+    // }
+    // else
+    //     PrintERR();
     
 }
 
