@@ -231,6 +231,11 @@ void PWM_Soft_Handler (void)
             soft_pwm_next = soft_pwm_ch1 - soft_pwm_ch2;            
             edges--;
         }
+
+        if (!edges)    //same time edges
+        {
+            soft_pwm_next = 4095 - soft_pwm_ch1;
+        }
         break;
 
     default:

@@ -249,8 +249,8 @@ void Test_Pwm_Handler_simul (void)
 
     
 
-    int pwm_ch1_value = 256;
-    int pwm_ch2_value = 1;    
+    int pwm_ch1_value = 254;
+    int pwm_ch2_value = 254;    
     printf("Test int pwm handler output ch1: %d ch2: %d\n", pwm_ch1_value, pwm_ch2_value);    
     PWM_Soft_Set_Channels (2, pwm_ch2_value);
     PWM_Soft_Set_Channels (1, pwm_ch1_value);
