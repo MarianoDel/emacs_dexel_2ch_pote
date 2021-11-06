@@ -28,6 +28,9 @@ extern volatile unsigned char soft_pwm_output_ch2;
 extern volatile unsigned short soft_pwm_cnt;
 extern volatile unsigned short soft_pwm_next;
 
+extern volatile unsigned short soft_pwm_ch1;
+extern volatile unsigned short soft_pwm_ch2;
+
 extern volatile unsigned char edges;
 // Globals ---------------------------------------------------------------------
 
@@ -38,8 +41,9 @@ extern volatile unsigned char edges;
 // Module Functions for testing ------------------------------------------------
 void Test_Pwm_Set (void);
 void Test_Pwm_Handler (void);
+void Test_Pwm_Handler_simul (void);
 void Test_Pwm_Handler_Low_Freq (void);
-void Test_Pwm_Handler_Low_Freq_soft (void);    
+void Test_Pwm_Handler_Low_Freq_simul (void);    
 
 // Module Functions ------------------------------------------------------------
 
@@ -49,8 +53,9 @@ int main(int argc, char *argv[])
 
     // Test_Pwm_Set ();
     // Test_Pwm_Handler ();
+    Test_Pwm_Handler_simul ();    
     // Test_Pwm_Handler_Low_Freq ();
-    Test_Pwm_Handler_Low_Freq_soft ();
+    // Test_Pwm_Handler_Low_Freq_simul ();
 }
 
 
@@ -59,6 +64,7 @@ void Test_Pwm_Handler_Low_Freq (void)
     int error = 0;
     int posi = 0;
     int setting = 0;
+    int value = 0;    
     
     printf("Test soft pwm handler no output: ");
     PWM_Soft_Set_Channels (1, 0);
@@ -96,14 +102,16 @@ void Test_Pwm_Handler_Low_Freq (void)
         {
             PWM_Soft_Handler_Low_Freq();
 
-            if (soft_pwm_cnt < j)    // check one output
+            if (soft_pwm_cnt <= j)    // check one output
             {
-                if (!soft_pwm_output_ch1)
+                if ((!soft_pwm_output_ch1) &&
+                    (soft_pwm_cnt))
                 {
                     error = 1;
                     posi = i;
                     setting = j;
-                    j = 255;                    
+                    value = 0;
+                    j = 255;
                     break;
                 }
             }
@@ -114,6 +122,7 @@ void Test_Pwm_Handler_Low_Freq (void)
                     error = 1;
                     posi = i;
                     setting = j;
+                    value = 1;                    
                     j = 255;                    
                     break;
                 }
@@ -124,7 +133,7 @@ void Test_Pwm_Handler_Low_Freq (void)
     if (error)
     {
         PrintERR();
-        printf(" error on counter: %d with setting: %d\n", posi, setting);
+        printf(" error on counter: %d with setting: %d value: %d\n", posi, setting, value);
     }
     else
         PrintOK();
@@ -141,13 +150,15 @@ void Test_Pwm_Handler_Low_Freq (void)
         {
             PWM_Soft_Handler_Low_Freq();
 
-            if (soft_pwm_cnt < j)    // check one output
+            if (soft_pwm_cnt <= j)    // check one output
             {
-                if (!soft_pwm_output_ch2)
+                if ((!soft_pwm_output_ch2) &&
+                    (soft_pwm_cnt))
                 {
                     error = 1;
                     posi = i;
                     setting = j;
+                    value = 0;
                     j = 255;                    
                     break;
                 }
@@ -159,6 +170,7 @@ void Test_Pwm_Handler_Low_Freq (void)
                     error = 1;
                     posi = i;
                     setting = j;
+                    value = 1;
                     j = 255;                    
                     break;
                 }
@@ -169,7 +181,7 @@ void Test_Pwm_Handler_Low_Freq (void)
     if (error)
     {
         PrintERR();
-        printf(" error on counter: %d with setting: %d\n", posi, setting);
+        printf(" error on counter: %d with setting: %d value: %d\n", posi, setting, value);
     }
     else
         PrintOK();
@@ -178,7 +190,7 @@ void Test_Pwm_Handler_Low_Freq (void)
 
 
 #define SOFT_PWM_STEPS    256
-void Test_Pwm_Handler_Low_Freq_soft (void)
+void Test_Pwm_Handler_Low_Freq_simul (void)
 {
     PWM_Soft_Set_Channels (1, 1);
     for (int i = 0; i < (SOFT_PWM_STEPS * 3); i++)
@@ -199,12 +211,117 @@ void Test_Pwm_Handler_Low_Freq_soft (void)
 }
 
 
+void Test_Pwm_Handler_simul (void)
+{
+    int error = 0;
+    int posi = 0;    
+    int setting = 0;
+    int called = 0;
+    int out_ch1_1 = 0;
+    int out_ch1_0 = 0;
+    int out_ch2_1 = 0;
+    int out_ch2_0 = 0;
+    
+    printf("Test int pwm handler output ch1 in 0\n");
+    PWM_Soft_Set_Channels (2, 0);
+    PWM_Soft_Set_Channels (1, 0);
+
+    PWM_Soft_Handler();    //first setting call
+    called = 0;
+    for (int i = 0; i < 4096; i++)
+    {
+        soft_pwm_cnt = i;
+            
+        if (soft_pwm_cnt == soft_pwm_next)
+        {
+            PWM_Soft_Handler();
+            called++;
+        }
+        
+        if (soft_pwm_output_ch1)
+            out_ch1_1++;
+        else
+            out_ch1_0++;
+
+    }
+    
+    printf("called: %d out_ch1_1: %d out_ch1_0: %d\n", called, out_ch1_1, out_ch1_0);
+
+    
+
+    int pwm_ch1_value = 256;
+    int pwm_ch2_value = 1;    
+    printf("Test int pwm handler output ch1: %d ch2: %d\n", pwm_ch1_value, pwm_ch2_value);    
+    PWM_Soft_Set_Channels (2, pwm_ch2_value);
+    PWM_Soft_Set_Channels (1, pwm_ch1_value);
+
+    PWM_Soft_Handler();    //first setting call
+    setting = (pwm_ch1_value << 4);
+    if (soft_pwm_ch1 != setting) 
+        printf(" error on setting ch1 needs: %d get: %d\n", setting, soft_pwm_ch1);
+    else
+        printf(" pwm ch1: %d setting on: %d\n", pwm_ch1_value, setting);
+
+    setting = (pwm_ch2_value << 4);    
+    if (soft_pwm_ch2 != setting) 
+        printf(" error on setting ch2 needs: %d get: %d\n", setting, soft_pwm_ch2);
+    else
+        printf(" pwm ch2: %d setting on: %d\n", pwm_ch2_value, setting);
+    
+    called = 0;
+    out_ch1_1 = 0;
+    out_ch1_0 = 0;
+    out_ch2_1 = 0;
+    out_ch2_0 = 0;
+    int delta = 0;
+    for (int i = 0; i < 4096; i++)
+    {
+        soft_pwm_cnt = i;
+            
+        if (soft_pwm_cnt == soft_pwm_next + delta)
+        {
+            PWM_Soft_Handler();
+            called++;
+            printf("  call: %d counter: %d next: %d total: %d\n",
+                   called,
+                   i,
+                   soft_pwm_next,
+                   soft_pwm_next + i);
+            delta = i;
+        }
+        
+        if (soft_pwm_output_ch1)
+            out_ch1_1++;
+        else
+            out_ch1_0++;
+
+        if (soft_pwm_output_ch2)
+            out_ch2_1++;
+        else
+            out_ch2_0++;
+        
+    }
+    printf(" called: %d out_ch1_1: %d out_ch1_0: %d total: %d\n",
+           called,
+           out_ch1_1,
+           out_ch1_0,
+           out_ch1_1 + out_ch1_0);
+
+    printf(" called: %d out_ch2_1: %d out_ch2_0: %d total: %d\n",
+           called,
+           out_ch2_1,
+           out_ch2_0,
+           out_ch2_1 + out_ch2_0);
+    
+}
+
+
 void Test_Pwm_Handler (void)
 {
     int error = 0;
     int posi = 0;
     
-    printf("Test soft pwm handler no output: ");
+    printf("Test int pwm handler no output: ");
     PWM_Soft_Set_Channels (1, 0);
     PWM_Soft_Set_Channels (2, 0);
 
@@ -230,21 +347,25 @@ void Test_Pwm_Handler (void)
 
 
     int setting = 0;
-    printf("Test soft pwm handler output ch1: ");
+    int called = 0;
+    printf("Test int pwm handler output ch1: ");
     PWM_Soft_Set_Channels (2, 0);
 
     for (int j = 0; j < 255; j++)
     {
         PWM_Soft_Set_Channels (1, j);
 
-        soft_pwm_next = 0;
-        edges = 0;
-        for (int i = 0; i < 4095; i++)
+        PWM_Soft_Handler();    //first setting call
+        called = 0;
+        for (int i = 0; i < 4096; i++)
         {
             soft_pwm_cnt = i;
 
             if (soft_pwm_cnt == soft_pwm_next)
+            {
                 PWM_Soft_Handler();
+                called++;
+            }
 
             if (soft_pwm_cnt < j)    // check one output
             {
@@ -269,6 +390,15 @@ void Test_Pwm_Handler (void)
                 }
             }
         }
+
+        if ((j) && (called != 2))
+        {
+            if (j != 255)
+                printf(" error in called needs 2 get: %d value: %d\n", called, j);
+        }
+        else if (called != 1)
+            printf(" error in called needs 1 get: %d value: %d\n", called, j);
+        
     }
 
     if (error)
@@ -280,7 +410,7 @@ void Test_Pwm_Handler (void)
         PrintOK();
 
 
-    printf("Test soft pwm handler output ch2: ");
+    printf("Test int pwm handler output ch2: ");
     PWM_Soft_Set_Channels (1, 0);
 
     for (int j = 0; j < 255; j++)

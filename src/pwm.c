@@ -172,73 +172,65 @@ void PWM_Soft_Handler (void)
     {
     case 0:
         // starting edge
-        soft_pwm_next = 0;
+        soft_pwm_next = 4095;    //default delta
         
         if (soft_saved_pwm_ch1)
         {
             soft_pwm_output_ch1 = 1;
-            soft_pwm_next = soft_saved_pwm_ch1;
-            
+            soft_pwm_ch1 = soft_saved_pwm_ch1 << 4;
+            soft_pwm_next = soft_pwm_ch1;
+
             edges++;
         }
 
         if (soft_saved_pwm_ch2)
         {
             soft_pwm_output_ch2 = 1;
-            if (soft_pwm_next > soft_saved_pwm_ch2)
-                soft_pwm_next = soft_saved_pwm_ch2;
+            soft_pwm_ch2 = soft_saved_pwm_ch2 << 4;
             
-            edges++;
-        }
+            if (soft_pwm_next > soft_pwm_ch2)
+                soft_pwm_next = soft_pwm_ch2;
 
-        if (!edges)    //default timer
-        {
-            soft_pwm_next = DEFAULT_SOFT_PWM;
+            edges++;
         }
         break;
 
     case 1:    // one edge
         // first falling edge
-        if (soft_pwm_ch1 <= soft_pwm_cnt)
+        if ((soft_pwm_output_ch1) &&
+            (soft_pwm_ch1 <= soft_pwm_cnt))
         {
             soft_pwm_output_ch1 = 0;
+            soft_pwm_next = 4095 - soft_pwm_ch1;
+            edges--;            
         }
 
-        if (soft_pwm_ch2 <= soft_pwm_cnt)
+        if ((soft_pwm_output_ch2) &&
+            (soft_pwm_ch2 <= soft_pwm_cnt))
         {
             soft_pwm_output_ch2 = 0;
+            soft_pwm_next = 4095 - soft_pwm_ch2;            
+            edges--;
         }
-
-        if (soft_pwm_ch1 > soft_pwm_ch2)
-        {
-            soft_pwm_next = DEFAULT_SOFT_PWM - soft_pwm_ch1;
-        }
-        else
-        {
-            soft_pwm_next = DEFAULT_SOFT_PWM - soft_pwm_ch2;
-        }
-
-        edges--;
         break;
 
     case 2:    // two edges
         // second falling edge
-        if (soft_pwm_ch1 <= soft_pwm_cnt)
+        if ((soft_pwm_output_ch1) &&
+            (soft_pwm_ch1 <= soft_pwm_cnt))
         {
             soft_pwm_output_ch1 = 0;
+            soft_pwm_next = soft_pwm_ch2 - soft_pwm_ch1;
+            edges--;            
         }
 
-        if (soft_pwm_ch2 <= soft_pwm_cnt)
+        if ((soft_pwm_output_ch2) &&
+            (soft_pwm_ch2 <= soft_pwm_cnt))
         {
             soft_pwm_output_ch2 = 0;
+            soft_pwm_next = soft_pwm_ch1 - soft_pwm_ch2;            
+            edges--;
         }
-
-        if (soft_pwm_ch1 > soft_pwm_ch2)
-            soft_pwm_next = soft_pwm_ch1 - soft_pwm_ch2;
-        else
-            soft_pwm_next = soft_pwm_ch2 -soft_pwm_ch1;
-
-        edges--;
         break;
 
     default:
