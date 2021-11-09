@@ -14,19 +14,16 @@
 
 #include "gpio.h"
 #include "tim.h"
-#include "uart.h"
 #include "adc.h"
 #include "dma.h"
-#include "flash_program.h"
 #include "core_cm0.h"
 
-#include "switches_answers.h"
+// #include "switches_answers.h"
 #include "test_functions.h"
-#include "parameters.h"
+// #include "parameters.h"
 #include "temperatures.h"
 #include "dsp.h"
 #include "pwm.h"
-#include "filters_and_offsets.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -34,17 +31,9 @@
 
 // Module Types Constants and Macros -------------------------------------------
 typedef enum {
-    MAIN_INIT,
     MAIN_HARD_INIT,
-    MAIN_CHECK_CONF,
-    MAIN_DMX_MODE_INIT,
-    MAIN_MANUAL_MODE_INIT,
-    MAIN_IN_DMX_MODE,
-    MAIN_IN_MANUAL_MODE,
-    MAIN_IN_OVERTEMP,
-    MAIN_IN_OVERCURRENT,
-    MAIN_ENTERING_MAIN_MENU,
-    MAIN_IN_MAIN_MENU
+    MAIN_RUNNING,
+    MAIN_IN_OVERTEMP
     
 } main_state_e;
 
@@ -54,24 +43,21 @@ typedef enum {
 volatile unsigned short adc_ch [ADC_CHANNEL_QUANTITY];
 // volatile unsigned char seq_ready;
 
-// externals for overcurrent protection
-extern volatile unsigned char f_channel_2_int;
-extern volatile unsigned char f_channel_4_int;
+// externals for timers
+volatile unsigned short wait_ms_var = 0;
 
 // Globals ---------------------------------------------------------------------
 //-- Timers globals ----------------------------------
 volatile unsigned short timer_standby = 0;
-volatile unsigned short wait_ms_var = 0;
+volatile unsigned short timer_check_temp = 0;
 
 //-- for the filters and outputs
-volatile unsigned char channels_values_int [2] = { 0 };
-volatile unsigned char enable_outputs_by_int = 0;
-
+ma32_u16_data_obj_t pote_1_filter;
+ma32_u16_data_obj_t pote_2_filter;
 
 
 // Module Private Functions ----------------------------------------------------
 void TimingDelay_Decrement(void);
-// void EXTI4_15_IRQHandler(void);
 void SysTickError (void);
 
 
@@ -96,398 +82,165 @@ int main(void)
     // TF_Two_Complete_Channels_Hardware ();
     // TF_Two_Complete_Channels_Hardware_With_Offset ();
     // TF_TIM17_Interrupt ();
-    TF_TIM17_Interrupt_Soft_Pwm ();
+    // TF_TIM17_Interrupt_Soft_Pwm ();
+    // TF_Two_Complete_Channels_Hardware_With_Offset_Soft_PWM ();
     // End Hardware Tests -------------------------------
 
     // Hardware Inits. ---------------------------
-//     // Timer for PWM
-//     TIM_3_Init ();
-//     PWMChannelsReset ();
-//     EnablePreload_PWM1;
-//     EnablePreload_PWM2;
+    // Init ADC and DMA
+    AdcConfig();
+    DMAConfig();
+    DMA1_Channel1->CCR |= DMA_CCR_EN;
+    ADC1->CR |= ADC_CR_ADSTART;
+
+    // Start of Complete Pote Channel 1
+    TIM_14_Init ();
+    TIM_1_Init_pwm_neg_CH1_trig_CH2 ();
     
-//     // Timer for PWM on ENAs
-//     TIM_1_Init ();
-// #ifndef USE_F_CHNLS_FOR_FREQ_DETECT
-//     PWM_Update_ENA1 (0);
-//     PWM_Update_ENA2 (0);
-//     EnablePreload_ENA1;
-//     EnablePreload_ENA2;
-// #endif
+    // Start of Complete Pote Channel 2
+    TIM_16_Init ();
+    TIM_3_Init_pwm_neg_CH1_trig_CH2 ();
+
+    // Init TIM 17 for Soft or Int init
+    TIM_17_Init ();
+
+    PWM_Soft_Set_Channels (1, 0);
+    PWM_Soft_Set_Channels (2, 0);
     
-//     // Usart and Timer for DMX
-//     Usart1Config ();
-//     TIM_14_Init ();
-//     DMX_DisableRx ();
+    unsigned short ch1_input_filtered = 0;
+    unsigned short ch2_input_filtered = 0;
 
-//     // ADC & DMA for temp sense
-//     AdcConfig();
-//     DMAConfig();
-//     DMA1_Channel1->CCR |= DMA_CCR_EN;
-//     ADC1->CR |= ADC_CR_ADSTART;
+    unsigned short bright = 0;
+    unsigned short temp0 = 0;
+    unsigned short temp1 = 0;
+
+    unsigned int calc = 0;
     
-//     // LCD Init and Welcome Code
-//     LCD_UtilsInit();
-//     CTRL_BKL_ON;
+    main_state_e main_state = MAIN_HARD_INIT;
 
-//     while (LCD_ShowBlink("Kirno Technology",
-//                          "  Smart Driver  ",
-//                          1,
-//                          BLINK_NO) != resp_finish);
-
-//     while (LCD_ShowBlink(" Dexel          ",
-//                          "  Lighting      ",
-//                          2,
-//                          BLINK_NO) != resp_finish);
-
-    
-//     // Production Program ---------------------------
-//     sw_actions_t action = selection_none;
-//     resp_t resp = resp_continue;
-//     unsigned char ch_values [2] = { 0 };
-//     main_state_e main_state = MAIN_INIT;
-//     unsigned char packet_cnt = 0;
-    
-//     while (1)
-//     {
-//         switch (main_state)
-//         {
-//         case MAIN_INIT:
-//             // get saved config or create one for default
-//             if (pflash_mem->program_type != 0xff)
-//             {
-//                 //memory with valid data
-//                 memcpy(&mem_conf, pflash_mem, sizeof(parameters_typedef));
-//             }
-//             else
-//             {
-//                 //hardware defaults
-//                 mem_conf.temp_prot = TEMP_IN_70;    //70 degrees
-//                 mem_conf.max_current_channels[0] = 255;
-//                 mem_conf.max_current_channels[1] = 255;
-//                 mem_conf.current_eight_amps = 0;
-//                 mem_conf.channels_operation_mode = CCT1_MODE;
-
-//                 mem_conf.dmx_first_channel = 1;
-//                 mem_conf.dmx_channel_quantity = 2;                
-//                 // mem_conf.program_type = DMX_MODE;
-//             }
-
-//             main_state++;
-//             break;
-
-//         case MAIN_HARD_INIT:
-
-//             //reseteo hardware
-//             DMX_DisableRx();
-
-//             //reseteo canales
-//             PWMChannelsReset();
-
-//             //limpio los filtros
-//             FiltersAndOffsets_Filters_Reset();
-
-//             //reviso si es 4 o 8Amps
-//             if (mem_conf.current_eight_amps)
-//                 I_SEL_ON;
-//             else
-//                 I_SEL_OFF;
-
-//             // packet reception enable
-//             DMX_EnableRx();
-//             timer_standby = 1000;    //one second for dmx detection
-//             mem_conf.program_type = AUTODETECT_MODE;
-
-//             main_state++;
-//             break;
-
-//         case MAIN_CHECK_CONF:
-//             if (Packet_Detected_Flag)
-//             {
-//                 Packet_Detected_Flag = 0;
-//                 packet_cnt++;
-//             }
-
-//             if ((packet_cnt > 5) &&
-//                 (timer_standby))
-//             {
-//                 mem_conf.program_type = DMX_MODE;
-//                 main_state = MAIN_DMX_MODE_INIT;
-//             }
-//             else if (!timer_standby)
-//             {
-//                 mem_conf.program_type = MANUAL_MODE;
-//                 main_state = MAIN_MANUAL_MODE_INIT;
-//             }
-//             break;
-
-//         case MAIN_DMX_MODE_INIT:
-//             // reception variables
-//             DMX_channel_selected = mem_conf.dmx_first_channel;
-//             DMX_channel_quantity = mem_conf.dmx_channel_quantity;
-
-//             // Force first screen
-//             Packet_Detected_Flag = 1;
-//             dmx_buff_data[0] = 0;
-//             dmx_buff_data[1] = 0;
-//             dmx_buff_data[2] = 0;
-
-//             // Mode Timeout enable
-//             ptFTT = &DMXMode_UpdateTimers;
-
-//             // packet reception enable
-//             // DMX_EnableRx();
-
-//             // habilito salidas si estoy con int
-//             enable_outputs_by_int = 1;
-                
-//             DMXModeReset();
-//             main_state = MAIN_IN_DMX_MODE;
-//             packet_cnt = 0;    // reset packet counter for autodetection
-//             break;
-
-//         case MAIN_MANUAL_MODE_INIT:
-//             // habilito salidas si estoy con int
-//             enable_outputs_by_int = 1;
-
-//             // Mode Timeout enable
-//             ptFTT = &ManualMode_UpdateTimers;
-
-//             for (unsigned char n = 0; n < sizeof(ch_values); n++)
-//             {
-//                 ch_values[n] = mem_conf.fixed_channels[n];
-//                 channels_values_int[n] = ch_values[n];    // set the first values
-//             }
-                
-//             ManualModeReset();                
-//             main_state = MAIN_IN_MANUAL_MODE;
-//             packet_cnt = 0;    // reset packet counter for autodetection
-//             break;
+    while (1)
+    {
+        switch (main_state)
+        {
+        case MAIN_HARD_INIT:
             
-//         case MAIN_IN_DMX_MODE:
-//             // Check encoder first
-//             action = CheckActions();
+            MA32_U16Circular_Reset (&pote_1_filter);
+            MA32_U16Circular_Reset (&pote_2_filter);    
 
-//             if (action != selection_back)
-//             {
-                
-//                 resp = DMXMode (ch_values, action);
-
-//                 if (resp == resp_change)
-//                 {
-//                     for (unsigned char n = 0; n < sizeof(channels_values_int); n++)
-//                         channels_values_int[n] = ch_values[n];
-//                 }
-
-//                 if (resp == resp_need_to_save)
-//                 {
-//                     need_to_save_timer = 10000;
-//                     need_to_save = 1;
-//                 }
-//             }
-//             else
-//                 main_state = MAIN_ENTERING_MAIN_MENU;
-
-//             // Manual mode autodetection
-//             if (DMXGetPacketTimer () == 0)
-//             {
-//                 if (!timer_standby)
-//                 {
-//                     if (packet_cnt < 2)
-//                     {
-//                         packet_cnt++;
-//                         timer_standby = 200;
-//                     }
-//                     else
-//                     {
-//                         // manual detection
-//                         main_state = MAIN_MANUAL_MODE_INIT;
-//                         mem_conf.program_type = MANUAL_MODE;
-//                     }
-//                 }
-//             }
-//             break;
-
-//         case MAIN_IN_MANUAL_MODE:
-//             // Check encoder first
-//             action = CheckActions();
-
-//             if (action != selection_back)
-//             {
-//                 resp = ManualMode (ch_values, action);
-
-//                 if (resp == resp_change)
-//                 {
-//                     for (unsigned char n = 0; n < sizeof(ch_values); n++)
-//                     {
-//                         mem_conf.fixed_channels[n] = ch_values[n];
-//                         channels_values_int[n] = ch_values[n];
-//                     }
-//                 }
-
-//                 if (resp == resp_need_to_save)
-//                 {
-//                     need_to_save_timer = 10000;
-//                     need_to_save = 1;
-//                 }
-//             }
-//             else
-//                 main_state = MAIN_ENTERING_MAIN_MENU;
-
-//             // Dmx presence autodetection
-//             if (Packet_Detected_Flag)
-//             {
-//                 Packet_Detected_Flag = 0;
-//                 packet_cnt++;
-//                 timer_standby = 1000;
-//             }
-
-//             if (packet_cnt > 5)
-//             {
-//                 if (timer_standby)
-//                 {
-//                     // dmx detection
-//                     main_state = MAIN_DMX_MODE_INIT;
-//                     mem_conf.program_type = DMX_MODE;                    
-//                 }
-//                 else
-//                 {
-//                     // dmx not present, reset the counter
-//                     packet_cnt = 0;
-//                 }
-//             }
-//             break;
-
-//         case MAIN_IN_OVERTEMP:
-//             if (Temp_Channel < TEMP_RECONNECT)
-//             {
-//                 //reconnect
-//                 main_state = MAIN_INIT;
-//             }
-//             break;
-
-//         case MAIN_IN_OVERCURRENT:
+            TIM17Enable();
             
-//             break;
+            main_state++;
+            break;
+
+        case MAIN_RUNNING:
             
-//         case MAIN_ENTERING_MAIN_MENU:
-//             //deshabilitar salidas hardware
-//             DMX_DisableRx();
+            if (!timer_standby)
+            {
+                ch1_input_filtered = MA32_U16Circular (&pote_1_filter, Pote_Channel_1);
+                ch2_input_filtered = MA32_U16Circular (&pote_2_filter, Pote_Channel_2);
 
-//             enable_outputs_by_int = 0;
-//             for (unsigned char n = 0; n < sizeof(channels_values_int); n++)
-//                 channels_values_int[n] = 0;
-            
-//             //reseteo canales
-//             PWMChannelsReset();
+                // colors mixer
+                bright = ch1_input_filtered;
+                temp0 = 4095 - ch2_input_filtered;
+                temp1 = 4095 - temp0;
+        
+                calc = temp0 * bright;
+                calc >>= 12;    // to 4095
+                ch1_input_filtered = (unsigned short) calc;
+        
+                calc = temp1 * bright;
+                calc >>= 12;    // to 4095
+                ch2_input_filtered = (unsigned short) calc;
+                // end of colors mixer
+        
 
-//             MENU_Main_Reset();
-            
-//             main_state++;
-//             break;
-
-//         case MAIN_IN_MAIN_MENU:
-//             action = CheckActions();
-            
-//             resp = MENU_Main(&mem_conf, action);
-
-//             if (resp == resp_need_to_save)
-//             {
-//                 need_to_save_timer = 0;
-//                 need_to_save = 1;
-                
-//                 main_state = MAIN_HARD_INIT;
-//             }
-            
-//             if (resp == resp_finish)
-//                 main_state = MAIN_HARD_INIT;
-
-//             break;
-
-//         default:
-//             main_state = MAIN_INIT;
-//             break;
-//         }
-
-//         // memory savings after config
-//         if ((need_to_save) && (!need_to_save_timer))
-//         {
-//             __disable_irq();
-//             need_to_save = WriteConfigurations();
-//             __enable_irq();
-
-//             need_to_save = 0;
-//         }
-
-//         // things that not depends on the main status
-//         UpdateSwitches();
-
-// #ifdef USE_TEMP_PROT
-//         if (main_state != MAIN_IN_OVERTEMP)
-//         {
-//             if (Temp_Channel > mem_conf.temp_prot)
-//             {
-//                 //deshabilitar salidas hardware
-//                 DMX_DisableRx();
-
-//                 enable_outputs_by_int = 0;
-//                 for (unsigned char n = 0; n < sizeof(channels_values_int); n++)
-//                     channels_values_int[n] = 0;
-            
-//                 //reseteo canales
-//                 PWMChannelsReset();
-
-//                 CTRL_FAN_ON;
-
-//                 while (LCD_ShowBlink("  Overtemp!!!   ",
-//                                      " LEDs shutdown  ",
-//                                      1,
-//                                      BLINK_NO) != resp_finish);
-                
-//                 main_state = MAIN_IN_OVERTEMP;
-//             }
-//             else if (Temp_Channel > TEMP_IN_35)
-//                 CTRL_FAN_ON;
-//             else if (Temp_Channel < TEMP_IN_30)
-//                 CTRL_FAN_OFF;
-//         }
-// #endif    //USE_TEMP_PROT
-// #ifdef USE_CTROL_FAN_ALWAYS_ON
-//         CTRL_FAN_ON;
-// #endif
-
-// #ifdef USE_OVERCURRENT_PROT
-//         if (main_state != MAIN_IN_OVERCURRENT)
-//         {
-//             if ((f_channel_2_int > 100) ||
-//                 (f_channel_4_int > 100))
-//             {
-//                 //deshabilitar salidas hardware
-//                 DMX_DisableRx();
-
-//                 enable_outputs_by_int = 0;
-//                 for (unsigned char n = 0; n < sizeof(channels_values_int); n++)
-//                     channels_values_int[n] = 0;
-            
-//                 //reseteo canales
-//                 PWMChannelsReset();
-
-//                 CTRL_FAN_ON;
-
-//                 while (LCD_ShowBlink("LEDs Overcurrent",
-//                                      " reset the unit!",
-//                                      1,
-//                                      BLINK_NO) != resp_finish);
-                
-//                 main_state = MAIN_IN_OVERCURRENT;
-//             }
-//         }        
-// #endif
+                if (ch1_input_filtered > 271)
+                {
+                    PWM_Soft_Set_Channels (1, 256);
+                    Update_TIM14_CH1 (ch1_input_filtered - 16);
+                }
+                else if (ch1_input_filtered > 15)
+                {
+                    ch1_input_filtered -= 16;
+                    PWM_Soft_Set_Channels (1, ch1_input_filtered);
+                    Update_TIM14_CH1 (255);
+                }
+                else
+                {
+                    PWM_Soft_Set_Channels (1, 0);
+                    Update_TIM14_CH1 (255);
+                }
 
         
+                if (ch2_input_filtered > 271)
+                {
+                    PWM_Soft_Set_Channels (2, 256);
+                    Update_TIM16_CH1N (ch2_input_filtered - 16);
+                }
+                else if (ch2_input_filtered > 15)
+                {
+                    ch2_input_filtered -= 16;
+                    PWM_Soft_Set_Channels (2, ch2_input_filtered);
+                    Update_TIM16_CH1N (255);
+                }
+                else
+                {
+                    PWM_Soft_Set_Channels (2, 0);
+                    Update_TIM16_CH1N (255);
+                }
+
+                timer_standby = 5;
+            }            
+            break;
+
+        case MAIN_IN_OVERTEMP:
+
+            if (!timer_check_temp)
+            {
+                if (Temp_Channel < TEMP_RECONNECT)
+                    main_state = MAIN_HARD_INIT;
+                
+                timer_check_temp = 2000;    //check again in two seconds            
+            }
+            break;
+
+        default:
+            main_state = MAIN_HARD_INIT;
+            break;
+        }
+
+#ifdef USE_TEMP_PROT
+        if ((main_state != MAIN_IN_OVERTEMP) &&
+            (!timer_check_temp))
+        {
+            if (Temp_Channel > TEMP_DISCONECT)
+            {
+                // channels reset
+                PWM_Soft_Set_Channels (1, 0);
+                PWM_Soft_Set_Channels (2, 0);                
+                Update_TIM14_CH1 (0);
+                Update_TIM16_CH1N (0);
+                
+                TIM17Disable();
+                CTRL_FAN_ON;
+
+                
+                main_state = MAIN_IN_OVERTEMP;
+            }
+            else if (Temp_Channel > TEMP_IN_35)
+                CTRL_FAN_ON;
+            else if (Temp_Channel < TEMP_IN_30)
+                CTRL_FAN_OFF;
+
+            timer_check_temp = 2000;    //check again in two seconds
+        }
+#endif    //USE_TEMP_PROT
         
-        
-//     }    //end of while 1
+#ifdef USE_CTROL_FAN_ALWAYS_ON
+        CTRL_FAN_ON;
+#endif
+
+    }    //end of while 1
 
     return 0;
 }
@@ -503,21 +256,15 @@ void TimingDelay_Decrement(void)
     if (timer_standby)
         timer_standby--;
 
-    // HARD_Timeouts();
+    if (timer_check_temp)
+        timer_check_temp--;
     
 }
 
 
-// void EXTI4_15_IRQHandler(void)
-// {
-//     DMX_Int_Break_Handler();
-//     EXTI->PR |= 0x00000100;    //PA8
-// }
-
-
 void SysTickError (void)
 {
-    //Capture systick error...
+    // Capture systick error...
     while (1)
     {
         if (LED)

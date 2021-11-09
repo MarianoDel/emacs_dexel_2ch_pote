@@ -75,16 +75,13 @@ SRC += ./src/adc.c
 SRC += ./src/dma.c
 SRC += ./src/dsp.c
 SRC += ./src/gpio.c
-SRC += ./src/hard.c
 SRC += ./src/it.c
 SRC += ./src/tim.c
 # SRC += ./src/spi.c
 # SRC += ./src/uart.c
-SRC += ./src/flash_program.c
+# SRC += ./src/flash_program.c
 SRC += ./src/test_functions.c
 SRC += ./src/pwm.c
-SRC += ./src/temperatures.c
-# SRC += ./src/filters_and_offsets.c
 
 
 

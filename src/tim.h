@@ -93,6 +93,7 @@ void TIM_17_Init(void);
 void TIM17_IRQHandler (void);
 void TIM17Enable (void);
 void TIM17Disable (void);
+void TIM_17_Init_Pwm_Int (void);
 
 void Update_TIM1_CH1 (unsigned short);
 void Update_TIM1_CH2 (unsigned short);

@@ -32,6 +32,8 @@ void TF_Two_Complete_Channels_Hardware_With_Offset (void);
 void TF_TIM17_Interrupt (void);
 void TF_TIM17_Interrupt_Soft_Pwm (void);
 
+void TF_Two_Complete_Channels_Hardware_With_Offset_Soft_PWM (void);
+
 #endif    /* _TEST_FUNTIONS_H_ */
 
 //--- end of file ---//

@@ -29,23 +29,12 @@
 #define TEMP_IN_70    3642
 #define TEMP_IN_85    3795
 
-#define TEMP_DISCONECT    TEMP_IN_85
-#define TEMP_RECONNECT    TEMP_IN_48
+#define TEMP_DISCONECT    TEMP_IN_65
+#define TEMP_RECONNECT    TEMP_IN_50
 
-#define TEMP_IN_MIN    TEMP_IN_50
-#define TEMP_IN_MAX    TEMP_IN_85
-
-#define TEMP_DEG_MIN    50
-#define TEMP_DEG_MAX    85
-
-#define TEMP_DEG_OFFSET    282
-#define TEMP_IN_OFFSET    2919
 
 
 // Module Exported Functions ---------------------------------------------------
-unsigned char Temp_TempToDegrees (unsigned short temp);
-unsigned short Temp_DegreesToTemp (unsigned char deg);
-unsigned char Temp_TempToDegreesExtended (unsigned short temp);
 
 
 #endif    /* _TEMPERATURES_H_ */

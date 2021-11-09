@@ -49,7 +49,7 @@ void PWM_Map_Pre_Filter (unsigned char dmx_data, unsigned short * pwm_ena, unsig
 void PWM_Map_Post_Filter (unsigned short dmx_filtered, unsigned short * pwm_ena, unsigned short * pwm_ch);
 
 void PWM_Soft_Set_Channels (unsigned char ch, unsigned short value);
-void PWM_Soft_Handler (void);
+void PWM_Int_Handler (void);
 void PWM_Soft_Handler_Low_Freq (void);
 
 void PWM_Soft_Reset_Output_Ch1 (void);

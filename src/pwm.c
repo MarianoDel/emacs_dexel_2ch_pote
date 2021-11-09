@@ -166,7 +166,7 @@ volatile unsigned short soft_pwm_next = 0;
 volatile unsigned char soft_pwm_output_ch1 = 0;
 volatile unsigned char soft_pwm_output_ch2 = 0;
 
-void PWM_Soft_Handler (void)
+void PWM_Int_Handler (void)
 {
     switch (edges)
     {
@@ -276,33 +276,33 @@ void PWM_Soft_Handler_Low_Freq (void)
 
 void PWM_Soft_Set_Output_Ch1 (void)
 {
-    soft_pwm_output_ch1 = 1;
-    // TIM1->ARR = VALUE_FOR_LEAST_FREQ;
-    // TIM1->EGR |= TIM_EGR_UG;    
-    // LED_ON;    
+    // soft_pwm_output_ch1 = 1;
+    TIM1->ARR = VALUE_FOR_LEAST_FREQ;
+    TIM1->EGR |= TIM_EGR_UG;    
+    LED_ON;    
 }
 
 
 void PWM_Soft_Reset_Output_Ch1 (void)
 {
-    soft_pwm_output_ch1 = 0;
-    // TIM1->ARR = 0;
-    // LED_OFF;
+    // soft_pwm_output_ch1 = 0;
+    TIM1->ARR = 0;
+    LED_OFF;
 }
 
 
 void PWM_Soft_Set_Output_Ch2 (void)
 {
-    soft_pwm_output_ch2 = 1;
-    // TIM3->ARR = VALUE_FOR_LEAST_FREQ;
-    // TIM3->EGR |= TIM_EGR_UG;
+    // soft_pwm_output_ch2 = 1;
+    TIM3->ARR = VALUE_FOR_LEAST_FREQ;
+    TIM3->EGR |= TIM_EGR_UG;
 }
 
 
 void PWM_Soft_Reset_Output_Ch2 (void)
 {
-    soft_pwm_output_ch2 = 0;
-    // TIM3->ARR = 0;
+    // soft_pwm_output_ch2 = 0;
+    TIM3->ARR = 0;
 }
 
 
