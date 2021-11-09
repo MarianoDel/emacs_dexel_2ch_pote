@@ -16,11 +16,8 @@
 #include "tim.h"
 #include "adc.h"
 #include "dma.h"
-#include "core_cm0.h"
 
-// #include "switches_answers.h"
 #include "test_functions.h"
-// #include "parameters.h"
 #include "temperatures.h"
 #include "dsp.h"
 #include "pwm.h"
@@ -221,8 +218,10 @@ int main(void)
                 Update_TIM14_CH1 (0);
                 Update_TIM16_CH1N (0);
                 
-                TIM17Disable();
                 CTRL_FAN_ON;
+                
+                Wait_ms (250);    //give some time for soft pwm updates
+                TIM17Disable();
 
                 
                 main_state = MAIN_IN_OVERTEMP;

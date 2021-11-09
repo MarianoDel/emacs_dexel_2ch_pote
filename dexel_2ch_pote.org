@@ -8,15 +8,18 @@
    - [X] TIM1_CH1 TIM1_CH2 pwm output, input trigger, constant off
    - [X] ADC inputs with DMA LM335 ADC_IN8 ADC_IN9
 
-** Firmware [1/5]
+** Firmware [5/5]
    - [X] ADC inputs to PWM outputs
          change R1 from 680 to 3k3 in LM335 input
-   - [ ] noise filter
-   - [ ] top and bottom filter with shutdown
-   - [ ] direct value mapping
-   - [ ] mixed value mapping
+   - [X] noise filter
+   - [X] top and bottom filter with shutdown
+   - [X] direct value mapping
+   - [X] mixed value mapping
 
 * Hardware changes in prototype
-** R1 from 680 to 3k3 in LM335 input
+** Changes in temp sensor input - LM335 -
+*** R2 from 1k to 2k7 1%
+*** R20 from 4k7 to 3k3 1%
+
 
 
