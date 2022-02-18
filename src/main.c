@@ -35,6 +35,14 @@ typedef enum {
 } main_state_e;
 
 
+// Colors temp ticks
+// #define START_OF_PWM_DIMMER    16
+// #define START_OF_PWM_DIMMER    20
+// #define START_OF_PWM_DIMMER    24    //well cleaning the minimum temp
+#define START_OF_PWM_DIMMER    28    //well cleaning the minimum temp
+#define ANALOG_FOR_PWM_DIMMER    255
+#define START_OF_CONTINUOS_DIMMER    (START_OF_PWM_DIMMER + ANALOG_FOR_PWM_DIMMER)
+
 // Externals -------------------------------------------------------------------
 // externals for ADC
 volatile unsigned short adc_ch [ADC_CHANNEL_QUANTITY];
@@ -151,39 +159,39 @@ int main(void)
                 // end of colors mixer
         
 
-                if (ch1_input_filtered > 271)
+                if (ch1_input_filtered > START_OF_CONTINUOS_DIMMER)
                 {
                     PWM_Soft_Set_Channels (1, 256);
-                    Update_TIM14_CH1 (ch1_input_filtered - 16);
+                    Update_TIM14_CH1 (ch1_input_filtered - START_OF_PWM_DIMMER);
                 }
-                else if (ch1_input_filtered > 15)
+                else if (ch1_input_filtered > (START_OF_PWM_DIMMER - 1))
                 {
-                    ch1_input_filtered -= 16;
+                    ch1_input_filtered -= START_OF_PWM_DIMMER;
                     PWM_Soft_Set_Channels (1, ch1_input_filtered);
-                    Update_TIM14_CH1 (255);
+                    Update_TIM14_CH1 (ANALOG_FOR_PWM_DIMMER);
                 }
                 else
                 {
                     PWM_Soft_Set_Channels (1, 0);
-                    Update_TIM14_CH1 (255);
+                    Update_TIM14_CH1 (ANALOG_FOR_PWM_DIMMER);
                 }
 
         
-                if (ch2_input_filtered > 271)
+                if (ch2_input_filtered > START_OF_CONTINUOS_DIMMER)
                 {
                     PWM_Soft_Set_Channels (2, 256);
-                    Update_TIM16_CH1N (ch2_input_filtered - 16);
+                    Update_TIM16_CH1N (ch2_input_filtered - START_OF_PWM_DIMMER);
                 }
-                else if (ch2_input_filtered > 15)
+                else if (ch2_input_filtered > (START_OF_PWM_DIMMER - 1))
                 {
-                    ch2_input_filtered -= 16;
+                    ch2_input_filtered -= START_OF_PWM_DIMMER;
                     PWM_Soft_Set_Channels (2, ch2_input_filtered);
-                    Update_TIM16_CH1N (255);
+                    Update_TIM16_CH1N (ANALOG_FOR_PWM_DIMMER);
                 }
                 else
                 {
                     PWM_Soft_Set_Channels (2, 0);
-                    Update_TIM16_CH1N (255);
+                    Update_TIM16_CH1N (ANALOG_FOR_PWM_DIMMER);
                 }
 
                 timer_standby = 5;

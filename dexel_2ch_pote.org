@@ -21,5 +21,8 @@
 *** R2 from 1k to 2k7 1%
 *** R20 from 4k7 to 3k3 1%
 
+* Pruebas cliente 17-02-2022
+** con el brillo al maximo, todo sobre un color, el otro titila
+   - el color que no se selecciona tiene una fuga pwm que lo prende apenas
 
 

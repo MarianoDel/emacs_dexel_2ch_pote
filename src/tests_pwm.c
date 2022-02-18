@@ -41,9 +41,14 @@ extern volatile unsigned char edges;
 // Module Functions for testing ------------------------------------------------
 void Test_Pwm_Set (void);
 void Test_Pwm_Int_Handler (void);
+void Test_Pwm_Int_Handler_2 (void);
+void Test_Pwm_Int_Handler_2_255 (void);
 void Test_Pwm_Int_Handler_simul (void);
+void Test_Pwm_Int_Handler_2_simul (void);
 void Test_Pwm_Soft_Handler_Low_Freq (void);
-void Test_Pwm_Soft_Handler_Low_Freq_simul (void);    
+void Test_Pwm_Soft_Handler_Low_Freq_simul (void);
+
+void Test_Pwm_Int_Handler_3 (void);
 
 // Module Functions ------------------------------------------------------------
 
@@ -53,9 +58,12 @@ int main(int argc, char *argv[])
 
     // Test_Pwm_Set ();
     // Test_Pwm_Handler ();
-    Test_Pwm_Int_Handler_simul ();    
+    // Test_Pwm_Int_Handler_simul ();    
     // Test_Pwm_Soft_Handler_Low_Freq ();
     // Test_Pwm_Soft_Handler_Low_Freq_simul ();
+    Test_Pwm_Int_Handler_2 ();
+    // Test_Pwm_Int_Handler_3 ();    
+    // Test_Pwm_Int_Handler_2_255 ();    
 }
 
 
@@ -325,6 +333,239 @@ void Test_Pwm_Int_Handler_simul (void)
            out_ch2_1,
            out_ch2_0,
            out_ch2_1 + out_ch2_0);
+    
+}
+
+
+void Test_Pwm_Int_Handler_2_255 (void)
+{
+    int error = 0;
+    int posi = 0;
+    int called = 0;
+    int out_ch1_1 = 0;
+    int out_ch1_0 = 0;
+    int out_ch2_1 = 0;
+    int out_ch2_0 = 0;
+    
+    printf("Test int pwm handler ch1 output\n");
+    PWM_Soft_Set_Channels (1, 1);
+    PWM_Soft_Set_Channels (2, 0);
+
+    // if (soft_saved_pwm_ch1 != 1)
+    //     printf(" error on setted\n");
+    soft_pwm_cnt = 0;
+    for (int i = 0; i < 255; i++)
+    // for (int i = 0; i < (4095 * 2); i++)        
+    {
+        if (!soft_pwm_cnt)
+        {
+            PWM_Int_Handler_2_255();
+            printf(" handler called on: %d counter: %d\n", i, soft_pwm_cnt);
+            called++;
+        }
+        else
+        {
+            soft_pwm_cnt--;
+        }
+        
+        if (soft_pwm_output_ch1)
+            out_ch1_1++;
+        else
+            out_ch1_0++;
+
+        if (soft_pwm_output_ch2)
+            out_ch2_1++;
+        else
+            out_ch2_0++;
+        
+    }
+    
+    printf("  called: %d out_ch1_1: %d out_ch1_0: %d total: %d\n",
+           called,
+           out_ch1_1,
+           out_ch1_0,
+           out_ch1_1 + out_ch1_0);
+
+    printf("  called: %d out_ch2_1: %d out_ch2_0: %d total: %d\n",
+           called,
+           out_ch2_1,
+           out_ch2_0,
+           out_ch2_1 + out_ch2_0);
+    
+    
+}
+
+void Test_Pwm_Int_Handler_3 (void)
+{
+    int error = 0;
+    int posi = 0;
+    int called = 0;
+    int out_ch1_1 = 0;
+    int out_ch1_0 = 0;
+    int out_ch2_1 = 0;
+    int out_ch2_0 = 0;
+    
+    
+    printf("Test int pwm handler no output: ");
+    PWM_Int_Handler_3_Start();
+    PWM_Soft_Set_Channels (1, 0);
+    PWM_Soft_Set_Channels (2, 0);
+    PWM_Int_Handler_3_Update();
+
+    for (int i = 0; i < 4095; i++)
+    {
+        PWM_Int_Handler_3();
+        if ((soft_pwm_output_ch1) ||
+            (soft_pwm_output_ch2))
+        {
+            error = 1;
+            posi = i;
+            break;
+        }
+    }
+
+    if (error)
+    {
+        PrintERR();
+        printf(" error on value: %d\n", posi);            
+    }
+    else
+        PrintOK();
+
+
+    printf("Test int pwm handler ch1 output\n");
+    PWM_Soft_Set_Channels (1, 1);
+    PWM_Soft_Set_Channels (2, 0);
+    PWM_Int_Handler_3_Update();
+
+    // if (soft_saved_pwm_ch1 != 1)
+    //     printf(" error on setted\n");
+    soft_pwm_cnt = 0;
+    // for (int i = 0; i < 4096; i++)
+    for (int i = 0; i < 4095; i++)        
+    // for (int i = 0; i < (4095 * 2); i++)        
+    {
+        if (!soft_pwm_cnt)
+        {
+            PWM_Int_Handler_3();
+            printf(" handler called on: %d counter: %d\n", i, soft_pwm_cnt);
+            called++;
+        }
+        else
+        {
+            soft_pwm_cnt--;
+        }
+        
+        if (soft_pwm_output_ch1)
+            out_ch1_1++;
+        else
+            out_ch1_0++;
+
+        if (soft_pwm_output_ch2)
+            out_ch2_1++;
+        else
+            out_ch2_0++;
+        
+    }
+    
+    printf("  called: %d out_ch1_1: %d out_ch1_0: %d total: %d\n",
+           called,
+           out_ch1_1,
+           out_ch1_0,
+           out_ch1_1 + out_ch1_0);
+
+    printf("  called: %d out_ch2_1: %d out_ch2_0: %d total: %d\n",
+           called,
+           out_ch2_1,
+           out_ch2_0,
+           out_ch2_1 + out_ch2_0);
+    
+    
+}
+
+
+void Test_Pwm_Int_Handler_2 (void)
+{
+    int error = 0;
+    int posi = 0;
+    int called = 0;
+    int out_ch1_1 = 0;
+    int out_ch1_0 = 0;
+    int out_ch2_1 = 0;
+    int out_ch2_0 = 0;
+    
+    
+    printf("Test int pwm handler no output: ");
+    PWM_Soft_Set_Channels (1, 0);
+    PWM_Soft_Set_Channels (2, 0);
+
+    for (int i = 0; i < 4095; i++)
+    {
+        PWM_Int_Handler_2();
+        if ((soft_pwm_output_ch1) ||
+            (soft_pwm_output_ch2))
+        {
+            error = 1;
+            posi = i;
+            break;
+        }
+    }
+
+    if (error)
+    {
+        PrintERR();
+        printf(" error on value: %d\n", posi);            
+    }
+    else
+        PrintOK();
+
+
+    printf("Test int pwm handler ch1 output\n");
+    PWM_Soft_Set_Channels (1, 255);
+    PWM_Soft_Set_Channels (2, 255);
+
+    // if (soft_saved_pwm_ch1 != 1)
+    //     printf(" error on setted\n");
+    soft_pwm_cnt = 0;
+    // for (int i = 0; i < 4096; i++)
+    for (int i = 0; i < 4095; i++)        
+    // for (int i = 0; i < (4095 * 2); i++)        
+    {
+        if (!soft_pwm_cnt)
+        {
+            PWM_Int_Handler_2();
+            printf(" handler called on: %d counter: %d\n", i, soft_pwm_cnt);
+            called++;
+        }
+        else
+        {
+            soft_pwm_cnt--;
+        }
+        
+        if (soft_pwm_output_ch1)
+            out_ch1_1++;
+        else
+            out_ch1_0++;
+
+        if (soft_pwm_output_ch2)
+            out_ch2_1++;
+        else
+            out_ch2_0++;
+        
+    }
+    
+    printf("  called: %d out_ch1_1: %d out_ch1_0: %d total: %d\n",
+           called,
+           out_ch1_1,
+           out_ch1_0,
+           out_ch1_1 + out_ch1_0);
+
+    printf("  called: %d out_ch2_1: %d out_ch2_0: %d total: %d\n",
+           called,
+           out_ch2_1,
+           out_ch2_0,
+           out_ch2_1 + out_ch2_0);
+    
     
 }
 

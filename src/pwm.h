@@ -50,6 +50,8 @@ void PWM_Map_Post_Filter (unsigned short dmx_filtered, unsigned short * pwm_ena,
 
 void PWM_Soft_Set_Channels (unsigned char ch, unsigned short value);
 void PWM_Int_Handler (void);
+void PWM_Int_Handler_2 (void);
+void PWM_Int_Handler_2_255 (void);
 void PWM_Soft_Handler_Low_Freq (void);
 
 void PWM_Soft_Reset_Output_Ch1 (void);
@@ -57,7 +59,9 @@ void PWM_Soft_Reset_Output_Ch2 (void);
 void PWM_Soft_Set_Output_Ch1 (void);
 void PWM_Soft_Set_Output_Ch2 (void);
 
-
+void PWM_Int_Handler_3_Start (void);
+void PWM_Int_Handler_3_Update (void);
+void PWM_Int_Handler_3 (void);
 
 #endif    /* __PWM_H_ */
 

@@ -281,7 +281,7 @@ void TIM_17_Init (void)
     if (!RCC_TIM17_CLK)
         RCC_TIM17_CLK_ON;
 
-    //Configuracion del timer.
+    //Configuracion del timer.    25us -> 40KHz
     TIM17->ARR = 25;
     TIM17->CNT = 0;
     TIM17->PSC = 47;
