@@ -199,6 +199,9 @@ clean:
 	rm -f $(ASRC:.s=.lst)
 	rm -f *.o
 	rm -f *.out
+	rm -f *.gcov
+	rm -f *.gcda
+	rm -f *.gcno
 
 
 tests:

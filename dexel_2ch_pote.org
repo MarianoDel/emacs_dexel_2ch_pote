@@ -26,3 +26,14 @@
    - el color que no se selecciona tiene una fuga pwm que lo prende apenas
 
 
+
+* Ajustes en produccion 02-09-2022
+** Ch2 siempre da mas corriente que Ch1
+   - es algo en el hard, velocidad de reaccion o algo por el estilo
+   - ajusto el valor maximo de pwm en ch2 para limitarle un poco la corriente
+
+** No apaga el segundo color con brillo al maximo
+   - con el P1 (brillo) al maximo prende algo el segundo color P2 (max o min
+     segun el color)
+   - El problema era el pote que no llegaba correctamente al extremo
+     

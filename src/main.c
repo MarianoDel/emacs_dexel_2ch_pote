@@ -38,8 +38,8 @@ typedef enum {
 // Colors temp ticks
 // #define START_OF_PWM_DIMMER    16
 // #define START_OF_PWM_DIMMER    20
-// #define START_OF_PWM_DIMMER    24    //well cleaning the minimum temp
-#define START_OF_PWM_DIMMER    28    //well cleaning the minimum temp
+#define START_OF_PWM_DIMMER    24    //well cleaning the minimum temp
+// #define START_OF_PWM_DIMMER    28    //well cleaning the minimum temp
 #define ANALOG_FOR_PWM_DIMMER    255
 #define START_OF_CONTINUOS_DIMMER    (START_OF_PWM_DIMMER + ANALOG_FOR_PWM_DIMMER)
 
@@ -144,11 +144,37 @@ int main(void)
                 ch1_input_filtered = MA32_U16Circular (&pote_1_filter, Pote_Channel_1);
                 ch2_input_filtered = MA32_U16Circular (&pote_2_filter, Pote_Channel_2);
 
-                // colors mixer
+                // the max points are in 3970
+                if (ch1_input_filtered > 3970)
+                    ch1_input_filtered = 3970;
+
+                if (ch2_input_filtered > 3970)
+                    ch2_input_filtered = 3970;
+                
+                // new colors mixer
                 bright = ch1_input_filtered;
-                temp0 = 4095 - ch2_input_filtered;
-                temp1 = 4095 - temp0;
-        
+                temp0 = 3970 - ch2_input_filtered;
+                // temp1 = 3970 - temp0;
+                unsigned short temp_int = temp0;
+                
+                if (temp_int > 3695)
+                    temp_int = 3695;
+                
+                temp1 = 3695 - temp_int;
+
+                // max test on ch1
+                // temp0 = 3970;
+                // temp1 = 0;
+
+                // max test on ch2
+                // temp0 = 0;
+                // temp1 = 3970;
+                
+                // colors mixer
+                // bright = ch1_input_filtered;
+                // temp0 = 4095 - ch2_input_filtered;
+                // temp1 = 4095 - temp0;
+                
                 calc = temp0 * bright;
                 calc >>= 12;    // to 4095
                 ch1_input_filtered = (unsigned short) calc;
