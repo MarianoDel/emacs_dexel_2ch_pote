@@ -60,8 +60,8 @@ int main(int argc, char *argv[])
     // Test_Pwm_Handler ();
     // Test_Pwm_Int_Handler_simul ();    
     // Test_Pwm_Soft_Handler_Low_Freq ();
-    // Test_Pwm_Soft_Handler_Low_Freq_simul ();
-    Test_Pwm_Int_Handler_2 ();
+    Test_Pwm_Soft_Handler_Low_Freq_simul ();
+    // Test_Pwm_Int_Handler_2 ();
     // Test_Pwm_Int_Handler_3 ();    
     // Test_Pwm_Int_Handler_2_255 ();    
 }
