@@ -59,6 +59,8 @@ volatile unsigned short timer_check_temp = 0;
 //-- for the filters and outputs
 ma32_u16_data_obj_t pote_1_filter;
 ma32_u16_data_obj_t pote_2_filter;
+ma32_u16_data_obj_t channel_1_filter;
+ma32_u16_data_obj_t channel_2_filter;
 
 
 // Module Private Functions ----------------------------------------------------
@@ -115,6 +117,11 @@ int main(void)
     unsigned short ch1_input_filtered = 0;
     unsigned short ch2_input_filtered = 0;
 
+//---- for new production mixer    
+    unsigned short ch1_output_filtered = 0;
+    unsigned short ch2_output_filtered = 0;
+//---- end of for new production mixer
+    
     unsigned short bright = 0;
     unsigned short temp0 = 0;
     unsigned short temp1 = 0;
@@ -132,6 +139,10 @@ int main(void)
             MA32_U16Circular_Reset (&pote_1_filter);
             MA32_U16Circular_Reset (&pote_2_filter);    
 
+//---- for new production mixer
+            MA32_U16Circular_Reset (&channel_1_filter);
+            MA32_U16Circular_Reset (&channel_2_filter);    
+//---- end of for new production mixer            
             TIM17Enable();
             
             main_state++;
@@ -143,57 +154,46 @@ int main(void)
             {
                 ch1_input_filtered = MA32_U16Circular (&pote_1_filter, Pote_Channel_1);
                 ch2_input_filtered = MA32_U16Circular (&pote_2_filter, Pote_Channel_2);
-
-                // the max points are in 3970
-                if (ch1_input_filtered > 3970)
-                    ch1_input_filtered = 3970;
-
-                if (ch2_input_filtered > 3970)
-                    ch2_input_filtered = 3970;
                 
-                // new colors mixer
-                bright = ch1_input_filtered;
-                temp0 = 3970 - ch2_input_filtered;
-                // temp1 = 3970 - temp0;
-                unsigned short temp_int = temp0;
-                
-                if (temp_int > 3695)
-                    temp_int = 3695;
-                
-                temp1 = 3695 - temp_int;
-
-                // max test on ch1
+//---- new production no mixer                
+                // the max points are in 3970 and min points are 100
+                // bright = 27;    // 25 no prende, 26 prende
                 // temp0 = 3970;
                 // temp1 = 0;
+//---- end of new production no mixer
 
-                // max test on ch2
-                // temp0 = 0;
-                // temp1 = 3970;
-                
-                // colors mixer
-                // bright = ch1_input_filtered;
-                // temp0 = 4095 - ch2_input_filtered;
-                // temp1 = 4095 - temp0;
-                
+//---- new production mixer
+                ch1_input_filtered >>= 4;    // to 255
+                ch2_input_filtered >>= 4;    // to 255
+
+                bright = ch1_input_filtered;
+                temp0 = 255 - ch2_input_filtered;
+                temp1 = 255 - temp0;
+
                 calc = temp0 * bright;
-                calc >>= 12;    // to 4095
+                // calc >>= 4;    // to 4095 1.968A on 29-09-2023
+                calc = calc * 235;    // 10% reduction
+                calc >>= 12;
                 ch1_input_filtered = (unsigned short) calc;
         
                 calc = temp1 * bright;
-                calc >>= 12;    // to 4095
+                // calc >>= 4;    // to 4095 2.07A on 29-09-2023
+                calc = calc * 224;    // 15% reduction
+                calc >>= 12;
                 ch2_input_filtered = (unsigned short) calc;
-                // end of colors mixer
-        
 
-                if (ch1_input_filtered > START_OF_CONTINUOS_DIMMER)
+                ch1_output_filtered = MA32_U16Circular (&channel_1_filter, ch1_input_filtered);
+                ch2_output_filtered = MA32_U16Circular (&channel_2_filter, ch2_input_filtered);
+                
+                if (ch1_output_filtered > START_OF_CONTINUOS_DIMMER)
                 {
                     PWM_Soft_Set_Channels (1, 256);
-                    Update_TIM14_CH1 (ch1_input_filtered - START_OF_PWM_DIMMER);
+                    Update_TIM14_CH1 (ch1_output_filtered - START_OF_PWM_DIMMER);
                 }
-                else if (ch1_input_filtered > (START_OF_PWM_DIMMER - 1))
+                else if (ch1_output_filtered > (START_OF_PWM_DIMMER - 1))
                 {
-                    ch1_input_filtered -= START_OF_PWM_DIMMER;
-                    PWM_Soft_Set_Channels (1, ch1_input_filtered);
+                    ch1_output_filtered -= START_OF_PWM_DIMMER;
+                    PWM_Soft_Set_Channels (1, ch1_output_filtered);
                     Update_TIM14_CH1 (ANALOG_FOR_PWM_DIMMER);
                 }
                 else
@@ -203,23 +203,89 @@ int main(void)
                 }
 
         
-                if (ch2_input_filtered > START_OF_CONTINUOS_DIMMER)
+                if (ch2_output_filtered > START_OF_CONTINUOS_DIMMER)
                 {
                     PWM_Soft_Set_Channels (2, 256);
-                    Update_TIM16_CH1N (ch2_input_filtered - START_OF_PWM_DIMMER);
+                    Update_TIM16_CH1N (ch2_output_filtered - START_OF_PWM_DIMMER);
                 }
-                else if (ch2_input_filtered > (START_OF_PWM_DIMMER - 1))
+                else if (ch2_output_filtered > (START_OF_PWM_DIMMER - 1))
                 {
-                    ch2_input_filtered -= START_OF_PWM_DIMMER;
-                    PWM_Soft_Set_Channels (2, ch2_input_filtered);
+                    ch2_output_filtered -= START_OF_PWM_DIMMER;
+                    PWM_Soft_Set_Channels (2, ch2_output_filtered);
                     Update_TIM16_CH1N (ANALOG_FOR_PWM_DIMMER);
                 }
                 else
                 {
                     PWM_Soft_Set_Channels (2, 0);
                     Update_TIM16_CH1N (ANALOG_FOR_PWM_DIMMER);
-                }
+                }                
+//---- end of new production mixer
+                
+//---- last production mixer
+                // // the max points are in 3970
+                // if (ch1_input_filtered > 3970)
+                //     ch1_input_filtered = 3970;
 
+                // if (ch2_input_filtered > 3970)
+                //     ch2_input_filtered = 3970;
+                
+                // // new colors mixer
+                // bright = ch1_input_filtered;
+                // temp0 = 3970 - ch2_input_filtered;
+                // // temp1 = 3970 - temp0;
+                // unsigned short temp_int = temp0;
+                
+                // if (temp_int > 3695)
+                //     temp_int = 3695;
+                
+                // temp1 = 3695 - temp_int;
+
+                // calc = temp0 * bright;
+                // calc >>= 12;    // to 4095
+                // ch1_input_filtered = (unsigned short) calc;
+        
+                // calc = temp1 * bright;
+                // calc >>= 12;    // to 4095
+                // ch2_input_filtered = (unsigned short) calc;
+                // // end of colors mixer
+        
+
+                // if (ch1_input_filtered > START_OF_CONTINUOS_DIMMER)
+                // {
+                //     PWM_Soft_Set_Channels (1, 256);
+                //     Update_TIM14_CH1 (ch1_input_filtered - START_OF_PWM_DIMMER);
+                // }
+                // else if (ch1_input_filtered > (START_OF_PWM_DIMMER - 1))
+                // {
+                //     ch1_input_filtered -= START_OF_PWM_DIMMER;
+                //     PWM_Soft_Set_Channels (1, ch1_input_filtered);
+                //     Update_TIM14_CH1 (ANALOG_FOR_PWM_DIMMER);
+                // }
+                // else
+                // {
+                //     PWM_Soft_Set_Channels (1, 0);
+                //     Update_TIM14_CH1 (ANALOG_FOR_PWM_DIMMER);
+                // }
+
+        
+                // if (ch2_input_filtered > START_OF_CONTINUOS_DIMMER)
+                // {
+                //     PWM_Soft_Set_Channels (2, 256);
+                //     Update_TIM16_CH1N (ch2_input_filtered - START_OF_PWM_DIMMER);
+                // }
+                // else if (ch2_input_filtered > (START_OF_PWM_DIMMER - 1))
+                // {
+                //     ch2_input_filtered -= START_OF_PWM_DIMMER;
+                //     PWM_Soft_Set_Channels (2, ch2_input_filtered);
+                //     Update_TIM16_CH1N (ANALOG_FOR_PWM_DIMMER);
+                // }
+                // else
+                // {
+                //     PWM_Soft_Set_Channels (2, 0);
+                //     Update_TIM16_CH1N (ANALOG_FOR_PWM_DIMMER);
+                // }                
+//---- end of last production mixer
+                
                 timer_standby = 5;
             }            
             break;
