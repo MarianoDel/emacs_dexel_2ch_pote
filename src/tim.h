@@ -16,7 +16,8 @@
 #define DUTY_MAX    (DUTY_100_PERCENT)
 #define DUTY_ALWAYS    (DUTY_100_PERCENT + 1)
 
-#define VALUE_FOR_LEAST_FREQ    1200    //40KHz
+// #define VALUE_FOR_LEAST_FREQ    1200    //40KHz
+#define VALUE_FOR_LEAST_FREQ    1414    // 34KHz    modif 27-05-2025
 
 #ifdef USE_PWM_16000_FREQ_1KHZ
 #define DUTY_00_PERCENT		0
