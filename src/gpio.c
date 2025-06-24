@@ -82,14 +82,22 @@ void GPIO_Config (void)
     if (!GPIOA_CLK)
         GPIOA_CLK_ON;
 
+#ifdef HARD_VER_2_2
     temp = GPIOA->MODER;    //2 bits por pin
-    temp &= 0xFCF03CFF;    // PA4 analog; PA7 alternative
-    temp |= 0x010A8300;    // PA8 - PA9 alternative; PA12 out
+    temp &= 0xFCFF3CFC;    // PA0 analog; PA4 analog; PA7 alternative
+    temp |= 0x01008303;    // PA8 - PA9 starts default go to alternative; PA12 out
     GPIOA->MODER = temp;
+#endif
+#ifdef HARD_VER_2_1
+    temp = GPIOA->MODER;    //2 bits por pin
+    temp &= 0xFCFF3CFF;    // PA4 analog; PA7 alternative
+    temp |= 0x01008300;    // PA8 - PA9 alternative; PA12 out
+    GPIOA->MODER = temp;
+#endif
 
     temp = GPIOA->OTYPER;    //1 bit por pin
-    temp &= 0xFFFFFFFF;    //
-    temp |= 0x00000000;
+    temp &= 0xFFFFFEFF;    //PA8 open drain
+    temp |= 0x00000100;
     GPIOA->OTYPER = temp;
     
     temp = GPIOA->OSPEEDR;	//2 bits por pin
@@ -111,13 +119,13 @@ void GPIO_Config (void)
         GPIOB_CLK_ON;
 
     temp = GPIOB->MODER;    //2 bits por pin
-    temp &= 0xFFFFC03F;    // PB3 out; PB4 - PB6 alternative
-    temp |= 0x00002A40;
+    temp &= 0xFFFFCF30;    // PB0 PB1 analog input; PB3 out; PB4 PB5 starts default go to alt; PB6 alternative
+    temp |= 0x0000204F;
     GPIOB->MODER = temp;
 
     temp = GPIOB->OTYPER;	//1 bit por pin
-    temp &= 0xFFFFFFFF;
-    temp |= 0x00000000;
+    temp &= 0xFFFFFFEF;    // PB4 open drain
+    temp |= 0x00000010;
     GPIOB->OTYPER = temp;
 
     temp = GPIOB->OSPEEDR;	//2 bits por pin

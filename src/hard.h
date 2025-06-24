@@ -16,7 +16,10 @@
 //-- Defines For Configuration -------------------
 //---- Configuration for Hardware Versions -------
 // #define HARDWARE_VERSION_1_1    //fuente 48V->12V en placa control
-#define HARDWARE_VERSION_1_0    //micro F030K6T6
+#define HARD_VER_2_2    // with peak current control
+// #define HARD_VER_2_1    // all the old versions
+
+
 
 
 // #define SOFTWARE_VERSION_1_1
@@ -38,8 +41,7 @@
 
 
 // Exported Pinout Names -------------------------------------------------------
-// #ifdef HARDWARE_VERSION_1_0
-//GPIOA pin0    
+//GPIOA pin0    Analog Adc_In0
 //GPIOA pin1    
 //GPIOA pin2    
 //GPIOA pin3    NC

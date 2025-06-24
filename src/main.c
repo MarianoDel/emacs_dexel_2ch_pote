@@ -57,11 +57,20 @@ volatile unsigned short timer_standby = 0;
 volatile unsigned short timer_check_temp = 0;
 
 //-- for the filters and outputs
+#ifdef HARD_VER_2_2
+ma32_u16_data_obj_t pote_1_filter;
+ma32_u16_data_obj_t pote_2_filter;
+ma32_u16_data_obj_t preset_filter;
+ma32_u16_data_obj_t channel_1_filter;
+ma32_u16_data_obj_t channel_2_filter;
+#endif
+
+#ifdef HARD_VER_2_1
 ma32_u16_data_obj_t pote_1_filter;
 ma32_u16_data_obj_t pote_2_filter;
 ma32_u16_data_obj_t channel_1_filter;
 ma32_u16_data_obj_t channel_2_filter;
-
+#endif
 
 // Module Private Functions ----------------------------------------------------
 void TimingDelay_Decrement(void);
@@ -103,20 +112,28 @@ int main(void)
     // Start of Complete Pote Channel 1
     TIM_14_Init ();
     TIM_1_Init_pwm_neg_CH1_trig_CH2 ();
+    // PWM_Soft_Reset_Output_Ch1 ();
     
     // Start of Complete Pote Channel 2
     TIM_16_Init ();
     TIM_3_Init_pwm_neg_CH1_trig_CH2 ();
+    // PWM_Soft_Reset_Output_Ch2 ();
 
     // Init TIM 17 for Soft or Int init
     TIM_17_Init ();
 
     PWM_Soft_Set_Channels (1, 0);
     PWM_Soft_Set_Channels (2, 0);
-    
+
+#ifdef HARD_VER_2_2
     unsigned short ch1_input_filtered = 0;
     unsigned short ch2_input_filtered = 0;
-
+    unsigned short preset_filtered = 0;    
+#endif
+#ifdef HARD_VER_2_1
+    unsigned short ch1_input_filtered = 0;
+    unsigned short ch2_input_filtered = 0;
+#endif
 //---- for new production mixer    
     unsigned short ch1_output_filtered = 0;
     unsigned short ch2_output_filtered = 0;
@@ -135,9 +152,15 @@ int main(void)
         switch (main_state)
         {
         case MAIN_HARD_INIT:
-            
+#ifdef HARD_VER_2_2            
             MA32_U16Circular_Reset (&pote_1_filter);
-            MA32_U16Circular_Reset (&pote_2_filter);    
+            MA32_U16Circular_Reset (&pote_2_filter);
+            MA32_U16Circular_Reset (&preset_filter);	    
+#endif
+#ifdef HARD_VER_2_1	    
+            MA32_U16Circular_Reset (&pote_1_filter);
+            MA32_U16Circular_Reset (&pote_2_filter);
+#endif
 
 //---- for new production mixer
             MA32_U16Circular_Reset (&channel_1_filter);
@@ -152,6 +175,38 @@ int main(void)
             
             if (!timer_standby)
             {
+#ifdef HARD_VER_2_2
+                ch1_input_filtered = MA32_U16Circular (&pote_1_filter, Pote_Channel_1);
+                ch2_input_filtered = MA32_U16Circular (&pote_2_filter, Pote_Channel_2);
+		preset_filtered = MA32_U16Circular (&preset_filter, Preset_Channel);
+                
+                ch1_input_filtered >>= 3;    // to 511
+                ch2_input_filtered >>= 3;    // to 511
+
+                bright = ch1_input_filtered;
+                temp0 = 511 - ch2_input_filtered;
+                temp1 = 511 - temp0;
+
+		// peak reduction
+		calc = temp0 * preset_filtered;    // 9 * 12 bits
+		calc >>= 12;    // to 511
+		temp0 = calc;
+
+		calc = temp1 * preset_filtered;    // 9 * 12 bits
+		calc >>= 12;    // to 511
+		temp1 = calc;
+		
+                calc = temp0 * bright;    // 9 * 9 bits
+                calc >>= 6;    // to 4095
+                ch1_input_filtered = (unsigned short) calc;
+        
+                calc = temp1 * bright;    // 9 * 9 bits
+                calc = calc * 242;    // 5% reduction
+                calc >>= 14;    // to 4095 5% reduction
+                ch2_input_filtered = (unsigned short) calc;
+#endif
+		
+#ifdef HARD_VER_2_1
                 ch1_input_filtered = MA32_U16Circular (&pote_1_filter, Pote_Channel_1);
                 ch2_input_filtered = MA32_U16Circular (&pote_2_filter, Pote_Channel_2);
                 
@@ -180,8 +235,8 @@ int main(void)
                 // calc >>= 4;    // to 4095 2.07A on 29-09-2023
                 calc = calc * 224;    // 15% reduction
                 calc >>= 12;
-                ch2_input_filtered = (unsigned short) calc;
-
+                ch2_input_filtered = (unsigned short) calc;		
+#endif
                 ch1_output_filtered = MA32_U16Circular (&channel_1_filter, ch1_input_filtered);
                 ch2_output_filtered = MA32_U16Circular (&channel_2_filter, ch2_input_filtered);
                 

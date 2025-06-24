@@ -9,6 +9,8 @@
 #ifndef _ADC_H_
 #define _ADC_H_
 
+#include "hard.h"    // include for adc inputs configs
+
 //----------- Defines For Configuration --------------//
 //----------- Some ADC Configurations ----------------//
 // #define ADC_WITH_INT
@@ -23,12 +25,24 @@
 #endif
 //----------- End of ADC Configurations --------------//
 
+#ifdef HARD_VER_2_2
+#define Preset_Channel    adc_ch[0]
+#define Temp_Channel    adc_ch[1]
+#define Pote_Channel_1    adc_ch[2]
+#define Pote_Channel_2    adc_ch[3]
+#define ADC_CHANNEL_QUANTITY    4
+#define ADC_LAST_CHANNEL_QUANTITY    (ADC_CHANNEL_QUANTITY - 1)
+#define ADC_All_Orer_Channels    (ADC_Channel_0 | ADC_Channel_4 | ADC_Channel_8 | ADC_Channel_9)
+#endif
+
+#ifdef HARD_VER_2_1
 #define Temp_Channel    adc_ch[0]
 #define Pote_Channel_1    adc_ch[1]
 #define Pote_Channel_2    adc_ch[2]
 #define ADC_CHANNEL_QUANTITY         3
 #define ADC_LAST_CHANNEL_QUANTITY    (ADC_CHANNEL_QUANTITY - 1)
 #define ADC_All_Orer_Channels    (ADC_Channel_4 | ADC_Channel_8 | ADC_Channel_9)
+#endif
 
 
 #define RCC_ADC_CLK    (RCC->APB2ENR & 0x00000200)
