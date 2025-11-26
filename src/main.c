@@ -199,7 +199,8 @@ int main(void)
 		// p1_hyst_last = ch1_input_filtered;
 		// p2_hyst_last = ch2_input_filtered;
 		// p3_hyst_last = preset_filtered;
-#ifdef USE_POTE1_CH1_POTE2_CH2		
+#ifdef USE_POTE1_CH1_POTE2_CH2
+		bright = 511;
                 temp0 = ch1_input_filtered;
                 temp1 = ch2_input_filtered;
 #else

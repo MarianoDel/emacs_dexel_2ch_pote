@@ -30,7 +30,7 @@
 #define USE_TEMP_PROT
 // #define USE_CTROL_FAN_ALWAYS_ON
 
-// #define USE_POTE1_CH1_POTE2_CH2    // use direct dimmer from pote to channel
+#define USE_POTE1_CH1_POTE2_CH2    // use direct dimmer from pote to channel
 
 // -- Freq for the timers
 // #define USE_PWM_16000_FREQ_1KHZ
