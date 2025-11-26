@@ -695,6 +695,37 @@ void PWM_Int_Handler (void)
 }
 
 
+// void PWM_Soft_Handler_Low_Freq (void)
+// {
+//     if (soft_pwm_cnt)
+//     {
+//         if (soft_saved_pwm_ch1 <= soft_pwm_cnt)        
+//             PWM_Soft_Reset_Output_Ch1 ();
+
+//         if (soft_saved_pwm_ch2 <= soft_pwm_cnt)
+//             PWM_Soft_Reset_Output_Ch2 ();
+        
+//         if (soft_pwm_cnt < (SOFT_PWM_STEPS - 1))
+//             soft_pwm_cnt++;
+//         else
+//             soft_pwm_cnt = 0;
+        
+//     }
+//     else
+//     {
+//         if (soft_saved_pwm_ch1)
+// 	    PWM_Soft_Set_Output_Ch1 ();
+
+//         if (soft_saved_pwm_ch2)
+//             PWM_Soft_Set_Output_Ch2 ();
+
+//         soft_pwm_cnt++;
+//     }
+// }
+
+
+volatile unsigned char soft_pwm_ch1_always = 0;
+volatile unsigned char soft_pwm_ch2_always = 0;
 void PWM_Soft_Handler_Low_Freq (void)
 {
     if (soft_pwm_cnt)
@@ -713,16 +744,38 @@ void PWM_Soft_Handler_Low_Freq (void)
     }
     else
     {
-        if (soft_saved_pwm_ch1)
-            PWM_Soft_Set_Output_Ch1 ();
+	if (soft_saved_pwm_ch1 == 256)
+	{
+	    if (!soft_pwm_ch1_always)
+	    {
+		soft_pwm_ch1_always = 1;
+		PWM_Soft_Set_Output_Ch1 ();
+	    }
+	}
+	else if (soft_saved_pwm_ch1)
+	{
+	    PWM_Soft_Set_Output_Ch1 ();
+	    soft_pwm_ch1_always = 0;
+	}
 
-        if (soft_saved_pwm_ch2)
-            PWM_Soft_Set_Output_Ch2 ();
+	if (soft_saved_pwm_ch2 == 256)
+	{
+	    if (!soft_pwm_ch2_always)
+	    {
+		soft_pwm_ch2_always = 1;
+		PWM_Soft_Set_Output_Ch2 ();
+	    }
+	}
+	else if (soft_saved_pwm_ch2)
+	{
+	    PWM_Soft_Set_Output_Ch2 ();
+	    soft_pwm_ch2_always = 0;
+	}
 
         soft_pwm_cnt++;
     }
 }
-
+    
 
 void PWM_Soft_Set_Output_Ch1 (void)
 {

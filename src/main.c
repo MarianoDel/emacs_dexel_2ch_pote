@@ -73,6 +73,9 @@ ma32_u16_data_obj_t channel_2_filter;
 #endif
 
 // Module Private Functions ----------------------------------------------------
+unsigned char Get_Diff_Great_Or_Equal (unsigned short v1, unsigned short v2, unsigned char diff);
+unsigned char Get_Diff_Greater (unsigned short v1, unsigned short v2, unsigned char diff);
+
 void TimingDelay_Decrement(void);
 void SysTickError (void);
 
@@ -147,6 +150,14 @@ int main(void)
     
     main_state_e main_state = MAIN_HARD_INIT;
 
+    // test 30-9-205
+    // unsigned short p1_hyst_last = 0;
+    // unsigned short p2_hyst_last = 0;
+    // unsigned short p3_hyst_last = 0;    // el trimmer
+    // unsigned short p1_hyst_last_last = 0;
+    // unsigned short p2_hyst_last_last = 0;
+    // unsigned short p3_hyst_last_last = 0;    // el trimmer en la vuelta previa
+    
     while (1)
     {
         switch (main_state)
@@ -176,24 +187,33 @@ int main(void)
             if (!timer_standby)
             {
 #ifdef HARD_VER_2_2
+		// LED_OFF;
                 ch1_input_filtered = MA32_U16Circular (&pote_1_filter, Pote_Channel_1);
                 ch2_input_filtered = MA32_U16Circular (&pote_2_filter, Pote_Channel_2);
 		preset_filtered = MA32_U16Circular (&preset_filter, Preset_Channel);
                 
                 ch1_input_filtered >>= 3;    // to 511
                 ch2_input_filtered >>= 3;    // to 511
+		preset_filtered >>= 6;    // to 64
 
+		// p1_hyst_last = ch1_input_filtered;
+		// p2_hyst_last = ch2_input_filtered;
+		// p3_hyst_last = preset_filtered;
+#ifdef USE_POTE1_CH1_POTE2_CH2		
+                temp0 = ch1_input_filtered;
+                temp1 = ch2_input_filtered;
+#else
                 bright = ch1_input_filtered;
                 temp0 = 511 - ch2_input_filtered;
                 temp1 = 511 - temp0;
-
+#endif		
 		// peak reduction
-		calc = temp0 * preset_filtered;    // 9 * 12 bits
-		calc >>= 12;    // to 511
+		calc = temp0 * preset_filtered;    // 9 * 6 bits
+		calc >>= 6;    // to 511
 		temp0 = calc;
 
-		calc = temp1 * preset_filtered;    // 9 * 12 bits
-		calc >>= 12;    // to 511
+		calc = temp1 * preset_filtered;    // 9 * 6 bits
+		calc >>= 6;    // to 511
 		temp1 = calc;
 		
                 calc = temp0 * bright;    // 9 * 9 bits
@@ -204,6 +224,27 @@ int main(void)
                 calc = calc * 242;    // 5% reduction
                 calc >>= 14;    // to 4095 5% reduction
                 ch2_input_filtered = (unsigned short) calc;
+
+		// check with led dimmer pote
+		// if (p1_hyst_last_last != p1_hyst_last)
+		// {
+		//     LED_ON;
+		//     p1_hyst_last_last = p1_hyst_last;
+		// }
+
+                // check with led color pote
+		// if (p2_hyst_last_last != p2_hyst_last)
+		// {
+		//     LED_ON;
+		//     p2_hyst_last_last = p2_hyst_last;
+		// }
+
+		// check with led trimmer pote
+		// if (p3_hyst_last_last != p3_hyst_last)
+		// {
+		//     LED_ON;
+		//     p3_hyst_last_last = p3_hyst_last;
+		// }
 #endif
 		
 #ifdef HARD_VER_2_1
@@ -237,6 +278,39 @@ int main(void)
                 calc >>= 12;
                 ch2_input_filtered = (unsigned short) calc;		
 #endif
+// test 30-9-25
+		// LED_OFF;
+                // ch1_input_filtered = MA32_U16Circular (&pote_1_filter, Pote_Channel_1);
+                // ch2_input_filtered = MA32_U16Circular (&pote_2_filter, Pote_Channel_2);
+// -- with hyst                
+                // ch1_input_filtered >>= 2;    // to 1023
+                // ch2_input_filtered >>= 2;    // to 1023
+
+		// p1_hyst_last = Get_Diff_UChar (p1_hyst_last >> 2, ch1_input_filtered, 3);	
+		// p2_hyst_last = Get_Diff_UChar (p2_hyst_last >> 2, ch2_input_filtered, 3);
+		
+                // bright = p1_hyst_last;
+                // temp0 = 255 - p2_hyst_last;
+                // temp1 = 255 - temp0;
+
+		// if (p1_hyst_last_last != p1_hyst_last)
+		// {
+		//     p1_hyst_last_last = p1_hyst_last;
+		//     LED_ON;
+		// }
+// -- end of with hyst		
+                // calc = temp0 * bright;
+                // // calc >>= 4;    // to 4095 1.968A on 29-09-2023
+                // calc = calc * 235;    // 10% reduction
+                // calc >>= 12;
+                // ch1_input_filtered = (unsigned short) calc;
+        
+                // calc = temp1 * bright;
+                // // calc >>= 4;    // to 4095 2.07A on 29-09-2023
+                // calc = calc * 224;    // 15% reduction
+                // calc >>= 12;
+                // ch2_input_filtered = (unsigned short) calc;		
+// end of test 30-9-25
                 ch1_output_filtered = MA32_U16Circular (&channel_1_filter, ch1_input_filtered);
                 ch2_output_filtered = MA32_U16Circular (&channel_2_filter, ch2_input_filtered);
                 
@@ -400,6 +474,38 @@ int main(void)
 }
 
 //--- End of Main ---//
+
+
+unsigned char Get_Diff_Great_Or_Equal (unsigned short v1, unsigned short v2, unsigned char diff)
+{
+    unsigned short calc = 0;
+
+    if (v1 > v2)
+	calc = v1 - v2;
+    else if (v1 < v2)
+	calc = v2 - v1;
+
+    if (calc >= diff)
+	return 1;
+
+    return 0;
+}
+
+
+unsigned char Get_Diff_Greater (unsigned short v1, unsigned short v2, unsigned char diff)
+{
+    unsigned short calc = 0;
+
+    if (v1 > v2)
+	calc = v1 - v2;
+    else if (v1 < v2)
+	calc = v2 - v1;
+
+    if (calc > diff)
+	return 1;
+
+    return 0;
+}
 
 
 void TimingDelay_Decrement(void)

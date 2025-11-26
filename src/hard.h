@@ -30,6 +30,8 @@
 #define USE_TEMP_PROT
 // #define USE_CTROL_FAN_ALWAYS_ON
 
+// #define USE_POTE1_CH1_POTE2_CH2    // use direct dimmer from pote to channel
+
 // -- Freq for the timers
 // #define USE_PWM_16000_FREQ_1KHZ
 #define USE_PWM_4000_FREQ_4KHZ
@@ -65,9 +67,9 @@
 //GPIOA pin11    NC
 
 //GPIOA pin12
-#define LED    ((GPIOA->ODR & 0x1000) == 0)
-#define LED_OFF    (GPIOA->BSRR = 0x00001000)
-#define LED_ON    (GPIOA->BSRR = 0x10000000)
+#define LED    ((GPIOA->ODR & 0x1000) != 0)
+#define LED_ON    (GPIOA->BSRR = 0x00001000)
+#define LED_OFF    (GPIOA->BSRR = 0x10000000)
 
 
 //GPIOA pin13

@@ -47,22 +47,28 @@ unsigned short sw_sel_cntr = 0;
 void Test_Switch_Select (void);
 void Test_Dmx_to_Percent (void);
 void Test_Dmx_to_Temperature (void);
+void Test_Diff (void);
 
 
 // Module Functions to Test ----------------------------------------------------
 resp_sw_t Check_SW_SEL (void);
 void DMX_to_Percent (unsigned char dmx, unsigned char * int_perc, unsigned char * dec_perc);
 void ColorTemp (unsigned char dmx_value, unsigned short * temp);
+unsigned char Get_Diff_Great_Or_Equal (unsigned short v1, unsigned short v2, unsigned char diff);
+unsigned char Get_Diff_Greater (unsigned short v1, unsigned short v2, unsigned char diff);
+
 
 
 // Module Functions ------------------------------------------------------------
 int main (int argc, char *argv[])
 {
-    Test_Switch_Select ();
+    // Test_Switch_Select ();
     // Test_Dmx_to_Percent ();
     // Test_Dmx_to_Temperature ();
     // printf("quiero un %% en la salida\n");
 
+    Test_Diff ();
+    
     return 0;    
     
 }
@@ -214,6 +220,71 @@ void Test_Dmx_to_Temperature (void)
         printf("-> %d\n", dmx_temp);
     }
     
+}
+
+
+void Test_Diff (void)
+{
+    unsigned char diff = 3;
+    
+    printf("Testing diff func with diff: %d\n", diff);
+
+    // int v1 = 3;
+    // int v2 = 0;
+
+    // printf("great or equal v1: %d v2: %d ans: %d\n", v1, v2,
+    // 	   Get_Diff_Great_Or_Equal(v1,v2,diff));
+
+    // printf("greater        v1: %d v2: %d ans: %d\n", v1, v2,
+    // 	   Get_Diff_Greater(v1,v2,diff));    
+
+
+    int v1 = 0;
+    int v2 = 0;
+    for (int i = 0; i < 10; i++)
+    {
+	for (int j = 0; j < 10; j++)
+	{
+	    v1 = i;
+	    v2 = j;
+
+	    printf("v1: %d v2: %d ans: %d\n", v1, v2,
+		   Get_Diff_Great_Or_Equal(v1,v2,diff));
+	}
+    }
+    
+}
+
+
+unsigned char Get_Diff_Great_Or_Equal (unsigned short v1, unsigned short v2, unsigned char diff)
+{
+    unsigned short calc = 0;
+
+    if (v1 > v2)
+	calc = v1 - v2;
+    else if (v1 < v2)
+	calc = v2 - v1;
+
+    if (calc >= diff)
+	return 1;
+
+    return 0;
+}
+
+
+unsigned char Get_Diff_Greater (unsigned short v1, unsigned short v2, unsigned char diff)
+{
+    unsigned short calc = 0;
+
+    if (v1 > v2)
+	calc = v1 - v2;
+    else if (v1 < v2)
+	calc = v2 - v1;
+
+    if (calc > diff)
+	return 1;
+
+    return 0;
 }
 
 //--- end of file ---//
